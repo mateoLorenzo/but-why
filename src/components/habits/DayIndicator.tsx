@@ -28,14 +28,19 @@ export const DayIndicator = ({
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.dayLabel, isToday && styles.dayLabelToday]}>
+      <Text
+        style={[
+          styles.dayLabel,
+          isToday && [styles.dayLabelToday, { color: accentColor }],
+        ]}
+      >
         {dayLabel}
       </Text>
       <Pressable
         onPress={handlePress}
         style={({ pressed }) => [
           styles.circle,
-          isToday && styles.circleToday,
+          isToday && [styles.circleToday, { borderColor: accentColor }],
           completed && {
             backgroundColor: accentColor,
             borderColor: accentColor,
@@ -63,7 +68,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   dayLabelToday: {
-    color: colors.primary[600],
     fontFamily: fonts.semiBold,
   },
   circle: {
@@ -77,7 +81,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   circleToday: {
-    borderColor: colors.primary[500],
     borderWidth: 2,
   },
   circlePressed: {

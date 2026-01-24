@@ -42,9 +42,14 @@ export const HabitCard = ({ habit, onToggleDay }: HabitCardProps) => {
 
         {habit.currentStreak > 0 && (
           <View style={styles.streakContainer}>
-            <View style={styles.streakBadge}>
-              <Ionicons name="flame" size={14} color={colors.warning[600]} />
-              <Text style={styles.streakText}>
+            <View
+              style={[
+                styles.streakBadge,
+                { backgroundColor: `${habit.color}18` },
+              ]}
+            >
+              <Ionicons name="flame" size={14} color={habit.color} />
+              <Text style={[styles.streakText, { color: habit.color }]}>
                 {habit.currentStreak}{" "}
                 {habit.currentStreak === 1 ? "day" : "days"}
               </Text>
@@ -98,7 +103,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: colors.warning[100],
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -106,6 +110,5 @@ const styles = StyleSheet.create({
   streakText: {
     fontSize: 12,
     fontFamily: fonts.medium,
-    color: colors.warning[700],
   },
 });
