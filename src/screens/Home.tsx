@@ -1,10 +1,16 @@
 import { HabitCard } from "@/src/components/habits/HabitCard";
-import { mockHabits } from "@/src/mock";
+import { mockCompletions, mockHabits } from "@/src/mock";
 import colors from "@/src/theme/colors";
 import { fonts } from "@/src/theme/fonts";
+import {
+  CompletionRecord,
+  DayStatus,
+  HabitWithWeekStatus,
+} from "@/src/types/habit";
 import { AppText as Text } from "@/src/ui/Text";
+import { getLastSevenDays } from "@/src/utils/dates";
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useMemo, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -16,9 +22,51 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Home = () => {
   const insets = useSafeAreaInsets();
+  const [completions, setCompletions] =
+    useState<CompletionRecord>(mockCompletions);
+
+  const weekDays = useMemo(() => getLastSevenDays(), []);
+
+  const habitsWithStatus: HabitWithWeekStatus[] = useMemo(() => {
+    return mockHabits.map((habit) => {
+      const habitCompletions = completions[habit.id] || {};
+
+      const weekStatus: DayStatus[] = weekDays.map((day) => ({
+        ...day,
+        completed: habitCompletions[day.date] || false,
+      }));
+
+      // Calculate streak (consecutive days completed ending today or yesterday)
+      let streak = 0;
+      for (let i = weekStatus.length - 1; i >= 0; i--) {
+        if (weekStatus[i].completed) {
+          streak++;
+        } else if (!weekStatus[i].isToday) {
+          // If it's not today and not completed, break the streak
+          break;
+        }
+      }
+
+      return {
+        ...habit,
+        weekStatus,
+        currentStreak: streak,
+      };
+    });
+  }, [completions, weekDays]);
+
+  const handleToggleDay = (habitId: string, date: string) => {
+    setCompletions((prev) => ({
+      ...prev,
+      [habitId]: {
+        ...prev[habitId],
+        [date]: !prev[habitId]?.[date],
+      },
+    }));
+  };
 
   const handleAddHabit = () => {
-    // TODO: Abrir bottom sheet para agregar hábito
+    // TODO: Open bottom sheet to add habit
     console.log("Add habit pressed");
   };
 
@@ -30,7 +78,6 @@ const Home = () => {
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <View>
           <Text style={styles.title}>Keep going</Text>
-          {/* <Text style={styles.greeting}>The mountains are calling</Text> */}
           <Text style={styles.greeting}>Straight towards the mountains</Text>
         </View>
         <Pressable
@@ -53,22 +100,26 @@ const Home = () => {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {mockHabits.length === 0 ? (
+        {habitsWithStatus.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons
               name="leaf-outline"
               size={48}
               color={colors.neutral[300]}
             />
-            <Text style={styles.emptyTitle}>Sin hábitos aún</Text>
+            <Text style={styles.emptyTitle}>No habits yet</Text>
             <Text style={styles.emptySubtitle}>
-              Toca el botón + para crear tu primer hábito
+              Tap the + button to create your first habit
             </Text>
           </View>
         ) : (
           <View style={styles.habitsList}>
-            {mockHabits.map((habit) => (
-              <HabitCard key={habit.id} habit={habit} />
+            {habitsWithStatus.map((habit) => (
+              <HabitCard
+                key={habit.id}
+                habit={habit}
+                onToggleDay={handleToggleDay}
+              />
             ))}
           </View>
         )}

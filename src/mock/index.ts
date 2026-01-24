@@ -1,69 +1,50 @@
 import colors from "@/src/theme/colors";
-import { HabitWithWeekStatus } from "@/src/types/habit";
+import { CompletionRecord, Habit } from "@/src/types/habit";
+import { getLastSevenDays } from "@/src/utils/dates";
 
-export const mockHabits: HabitWithWeekStatus[] = [
+export const mockHabits: Habit[] = [
   {
     id: "1",
-    name: "Meditar",
+    name: "Meditate",
     color: colors.primary[500],
     createdAt: new Date(),
-    currentStreak: 5,
-    weekStatus: [
-      { date: "2026-01-19", dayLabel: "D", completed: true, isToday: false },
-      { date: "2026-01-20", dayLabel: "L", completed: true, isToday: false },
-      { date: "2026-01-21", dayLabel: "M", completed: true, isToday: false },
-      { date: "2026-01-22", dayLabel: "X", completed: true, isToday: false },
-      { date: "2026-01-23", dayLabel: "J", completed: true, isToday: false },
-      { date: "2026-01-24", dayLabel: "V", completed: false, isToday: true },
-      { date: "2026-01-25", dayLabel: "S", completed: false, isToday: false },
-    ],
   },
   {
     id: "2",
-    name: "Ejercicio",
+    name: "Exercise",
     color: colors.success[600],
     createdAt: new Date(),
-    currentStreak: 12,
-    weekStatus: [
-      { date: "2026-01-19", dayLabel: "D", completed: true, isToday: false },
-      { date: "2026-01-20", dayLabel: "L", completed: true, isToday: false },
-      { date: "2026-01-21", dayLabel: "M", completed: false, isToday: false },
-      { date: "2026-01-22", dayLabel: "X", completed: true, isToday: false },
-      { date: "2026-01-23", dayLabel: "J", completed: true, isToday: false },
-      { date: "2026-01-24", dayLabel: "V", completed: false, isToday: true },
-      { date: "2026-01-25", dayLabel: "S", completed: false, isToday: false },
-    ],
   },
   {
     id: "3",
-    name: "Leer 30 min",
+    name: "Read 30 min",
     color: colors.warning[600],
     createdAt: new Date(),
-    currentStreak: 3,
-    weekStatus: [
-      { date: "2026-01-19", dayLabel: "D", completed: false, isToday: false },
-      { date: "2026-01-20", dayLabel: "L", completed: false, isToday: false },
-      { date: "2026-01-21", dayLabel: "M", completed: true, isToday: false },
-      { date: "2026-01-22", dayLabel: "X", completed: true, isToday: false },
-      { date: "2026-01-23", dayLabel: "J", completed: true, isToday: false },
-      { date: "2026-01-24", dayLabel: "V", completed: false, isToday: true },
-      { date: "2026-01-25", dayLabel: "S", completed: false, isToday: false },
-    ],
   },
   {
     id: "4",
     name: "Journaling",
     color: colors.info[600],
     createdAt: new Date(),
-    currentStreak: 0,
-    weekStatus: [
-      { date: "2026-01-19", dayLabel: "D", completed: true, isToday: false },
-      { date: "2026-01-20", dayLabel: "L", completed: false, isToday: false },
-      { date: "2026-01-21", dayLabel: "M", completed: false, isToday: false },
-      { date: "2026-01-22", dayLabel: "X", completed: true, isToday: false },
-      { date: "2026-01-23", dayLabel: "J", completed: false, isToday: false },
-      { date: "2026-01-24", dayLabel: "V", completed: false, isToday: true },
-      { date: "2026-01-25", dayLabel: "S", completed: false, isToday: false },
-    ],
   },
 ];
+
+// Generate some mock completions for the last 7 days
+const generateMockCompletions = (): CompletionRecord => {
+  const days = getLastSevenDays();
+  const completions: CompletionRecord = {};
+
+  mockHabits.forEach((habit) => {
+    completions[habit.id] = {};
+    days.forEach((day, index) => {
+      // Random completions for past days, not completed for today
+      if (!day.isToday) {
+        completions[habit.id][day.date] = Math.random() > 0.4;
+      }
+    });
+  });
+
+  return completions;
+};
+
+export const mockCompletions = generateMockCompletions();

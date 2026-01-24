@@ -9,9 +9,10 @@ import { DayIndicator } from "./DayIndicator";
 
 interface HabitCardProps {
   habit: HabitWithWeekStatus;
+  onToggleDay: (habitId: string, date: string) => void;
 }
 
-export const HabitCard = ({ habit }: HabitCardProps) => {
+export const HabitCard = ({ habit, onToggleDay }: HabitCardProps) => {
   return (
     <View style={styles.container}>
       <View style={[styles.accentBar, { backgroundColor: habit.color }]} />
@@ -34,6 +35,7 @@ export const HabitCard = ({ habit }: HabitCardProps) => {
               completed={day.completed}
               isToday={day.isToday}
               accentColor={habit.color}
+              onPress={() => onToggleDay(habit.id, day.date)}
             />
           ))}
         </View>
@@ -44,7 +46,7 @@ export const HabitCard = ({ habit }: HabitCardProps) => {
               <Ionicons name="flame" size={14} color={colors.warning[600]} />
               <Text style={styles.streakText}>
                 {habit.currentStreak}{" "}
-                {habit.currentStreak === 1 ? "día" : "días"}
+                {habit.currentStreak === 1 ? "day" : "days"}
               </Text>
             </View>
           </View>

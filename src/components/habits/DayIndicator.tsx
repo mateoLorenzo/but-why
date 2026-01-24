@@ -1,15 +1,17 @@
 import colors from "@/src/theme/colors";
 import { fonts } from "@/src/theme/fonts";
-import React from "react";
-import { StyleSheet, View } from "react-native";
-import { AppText as Text } from "@/src/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import React from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import { AppText as Text } from "@/src/ui/Text";
 
 interface DayIndicatorProps {
   dayLabel: string;
   completed: boolean;
   isToday: boolean;
   accentColor: string;
+  onPress: () => void;
 }
 
 export const DayIndicator = ({
@@ -17,28 +19,34 @@ export const DayIndicator = ({
   completed,
   isToday,
   accentColor,
+  onPress,
 }: DayIndicatorProps) => {
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+
   return (
     <View style={styles.container}>
-      <Text
-        style={[
-          styles.dayLabel,
-          isToday && styles.dayLabelToday,
-        ]}
-      >
+      <Text style={[styles.dayLabel, isToday && styles.dayLabelToday]}>
         {dayLabel}
       </Text>
-      <View
-        style={[
+      <Pressable
+        onPress={handlePress}
+        style={({ pressed }) => [
           styles.circle,
           isToday && styles.circleToday,
-          completed && { backgroundColor: accentColor, borderColor: accentColor },
+          completed && {
+            backgroundColor: accentColor,
+            borderColor: accentColor,
+          },
+          pressed && styles.circlePressed,
         ]}
       >
         {completed && (
           <Ionicons name="checkmark" size={14} color={colors.base.white} />
         )}
-      </View>
+      </Pressable>
     </View>
   );
 };
@@ -52,7 +60,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: fonts.medium,
     color: colors.neutral[400],
-    textTransform: "lowercase",
+    textTransform: "uppercase",
   },
   dayLabelToday: {
     color: colors.primary[600],
@@ -71,5 +79,9 @@ const styles = StyleSheet.create({
   circleToday: {
     borderColor: colors.primary[500],
     borderWidth: 2,
+  },
+  circlePressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.92 }],
   },
 });

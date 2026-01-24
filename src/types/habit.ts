@@ -8,9 +8,12 @@ export interface Habit {
 export interface DayStatus {
   date: string; // YYYY-MM-DD
   completed: boolean;
-  dayLabel: string; // L, M, X, J, V, S, D
+  dayLabel: string; // M, T, W, T, F, S, S (English)
   isToday: boolean;
 }
+
+// Record of habitId -> { date -> completed }
+export type CompletionRecord = Record<string, Record<string, boolean>>;
 
 export interface HabitWithWeekStatus extends Habit {
   weekStatus: DayStatus[];
