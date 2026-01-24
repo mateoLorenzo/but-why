@@ -1,3 +1,4 @@
+import colors from "@/src/theme/colors";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
 import { useEffect } from "react";
@@ -21,14 +22,14 @@ export default function RootLayout() {
     return null;
   }
   return (
-    <Stack>
-      <Stack.Screen
-        name="index"
-        options={{
-          headerShown: false,
-          contentStyle: { backgroundColor: "#fff" },
-        }}
-      />
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.neutral[100] },
+      }}
+    >
+      <Stack.Screen name="index" />
+      <Stack.Screen name="home" />
     </Stack>
   );
 }
