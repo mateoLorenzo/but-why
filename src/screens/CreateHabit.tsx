@@ -1,3 +1,4 @@
+import { habitsStorage } from "@/src/storage/habits";
 import colors from "@/src/theme/colors";
 import { fonts } from "@/src/theme/fonts";
 import { AppText as Text } from "@/src/ui/Text";
@@ -61,19 +62,22 @@ const CreateHabit = () => {
     router.back();
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!name.trim()) return;
 
-    // TODO: Save habit to store
-    console.log("Creating habit:", {
-      name,
+    const days =
+      selectedFrequency === "custom"
+        ? customDays
+        : FREQUENCY_OPTIONS.find((f) => f.id === selectedFrequency)?.days || [];
+
+    await habitsStorage.addHabit({
+      id: Date.now().toString(),
+      name: name.trim(),
       color: selectedColor,
       icon: selectedIcon,
       frequency: selectedFrequency,
-      days:
-        selectedFrequency === "custom"
-          ? customDays
-          : FREQUENCY_OPTIONS.find((f) => f.id === selectedFrequency)?.days,
+      days,
+      createdAt: new Date(),
     });
 
     router.back();

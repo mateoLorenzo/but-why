@@ -1,18 +1,13 @@
 import { HabitCard } from "@/src/components/habits/HabitCard";
-import { mockCompletions, mockHabits } from "@/src/mock";
+import { useHabits } from "@/src/hooks/useHabits";
 import colors from "@/src/theme/colors";
 import { fonts } from "@/src/theme/fonts";
-import {
-  CompletionRecord,
-  DayStatus,
-  HabitWithWeekStatus,
-} from "@/src/types/habit";
 import { AppText as Text } from "@/src/ui/Text";
-import { getLastSevenDays } from "@/src/utils/dates";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback } from "react";
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StatusBar,
@@ -23,47 +18,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Home = () => {
   const insets = useSafeAreaInsets();
-  const [completions, setCompletions] =
-    useState<CompletionRecord>(mockCompletions);
+  const { habits, isLoading, toggleCompletion, refresh } = useHabits();
 
-  const weekDays = useMemo(() => getLastSevenDays(), []);
+  // Refresh habits when screen comes into focus (after creating a new habit)
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh]),
+  );
 
-  const habitsWithStatus: HabitWithWeekStatus[] = useMemo(() => {
-    return mockHabits.map((habit) => {
-      const habitCompletions = completions[habit.id] || {};
-
-      const weekStatus: DayStatus[] = weekDays.map((day) => ({
-        ...day,
-        completed: habitCompletions[day.date] || false,
-      }));
-
-      // Calculate streak (consecutive days completed ending today or yesterday)
-      let streak = 0;
-      for (let i = weekStatus.length - 1; i >= 0; i--) {
-        if (weekStatus[i].completed) {
-          streak++;
-        } else if (!weekStatus[i].isToday) {
-          // If it's not today and not completed, break the streak
-          break;
-        }
-      }
-
-      return {
-        ...habit,
-        weekStatus,
-        currentStreak: streak,
-      };
-    });
-  }, [completions, weekDays]);
-
-  const handleToggleDay = (habitId: string, date: string) => {
-    setCompletions((prev) => ({
-      ...prev,
-      [habitId]: {
-        ...prev[habitId],
-        [date]: !prev[habitId]?.[date],
-      },
-    }));
+  const handleToggleDay = async (habitId: string, date: string) => {
+    await toggleCompletion(habitId, date);
   };
 
   const handleAddHabit = () => {
@@ -97,13 +62,18 @@ const Home = () => {
         contentContainerStyle={[
           styles.scrollContent,
           { paddingBottom: insets.bottom + 24 },
+          habits.length === 0 && styles.scrollContentEmpty,
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {habitsWithStatus.length === 0 ? (
+        {isLoading ? (
+          <View style={styles.loadingState}>
+            <ActivityIndicator size="large" color={colors.primary[500]} />
+          </View>
+        ) : habits.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons
-              name="leaf-outline"
+              name="list-outline"
               size={48}
               color={colors.neutral[300]}
             />
@@ -114,7 +84,7 @@ const Home = () => {
           </View>
         ) : (
           <View style={styles.habitsList}>
-            {habitsWithStatus.map((habit) => (
+            {habits.map((habit) => (
               <HabitCard
                 key={habit.id}
                 habit={habit}
@@ -184,6 +154,15 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 20,
+  },
+  scrollContentEmpty: {
+    flex: 1,
+  },
+  loadingState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 80,
   },
   habitsList: {
     gap: 12,

@@ -2,6 +2,9 @@ export interface Habit {
   id: string;
   name: string;
   color: string;
+  icon: string;
+  frequency: string; // "daily" | "weekdays" | "custom"
+  days: number[]; // [0-6] representing Sun-Sat
   createdAt: Date;
 }
 

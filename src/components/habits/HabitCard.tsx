@@ -19,7 +19,21 @@ export const HabitCard = ({ habit, onToggleDay }: HabitCardProps) => {
 
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.habitName}>{habit.name}</Text>
+          <View style={styles.headerLeft}>
+            <View
+              style={[
+                styles.iconContainer,
+                { backgroundColor: `${habit.color}18` },
+              ]}
+            >
+              <Ionicons
+                name={habit.icon as keyof typeof Ionicons.glyphMap}
+                size={18}
+                color={habit.color}
+              />
+            </View>
+            <Text style={styles.habitName}>{habit.name}</Text>
+          </View>
           <Ionicons
             name="chevron-forward"
             size={20}
@@ -85,6 +99,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
   habitName: {
     fontSize: 17,
