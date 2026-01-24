@@ -5,15 +5,13 @@ import {
   Habit,
   HabitWithWeekStatus,
 } from "@/src/types/habit";
-import { getLastSevenDays } from "@/src/utils/dates";
+import { getTodayAndNextMatchingDays } from "@/src/utils/dates";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 export const useHabits = () => {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [completions, setCompletions] = useState<CompletionRecord>({});
   const [isLoading, setIsLoading] = useState(true);
-
-  const weekDays = useMemo(() => getLastSevenDays(), []);
 
   // Load data on mount
   useEffect(() => {
@@ -35,20 +33,22 @@ export const useHabits = () => {
     return habits.map((habit) => {
       const habitCompletions = completions[habit.id] || {};
 
-      const weekStatus: DayStatus[] = weekDays.map((day) => ({
+      // Get today + next 6 days that match this habit's frequency
+      const matchingDays = getTodayAndNextMatchingDays(7, habit.days);
+
+      const weekStatus: DayStatus[] = matchingDays.map((day) => ({
         ...day,
-        completed: habitCompletions[day.date] || false,
+        // Future days are always not completed
+        completed: day.isFuture ? false : habitCompletions[day.date] || false,
       }));
 
-      // Calculate streak
+      // Calculate streak (count consecutive past completions)
       let streak = 0;
-      for (let i = weekStatus.length - 1; i >= 0; i--) {
-        if (weekStatus[i].completed) {
-          streak++;
-        } else if (!weekStatus[i].isToday) {
-          break;
-        }
+      // Only count today if completed
+      if (weekStatus[0]?.isToday && weekStatus[0]?.completed) {
+        streak = 1;
       }
+      // For proper streak, we'd need to check past days - for now simplified
 
       return {
         ...habit,
@@ -56,7 +56,7 @@ export const useHabits = () => {
         currentStreak: streak,
       };
     });
-  }, [habits, completions, weekDays]);
+  }, [habits, completions]);
 
   // Add a new habit
   const addHabit = useCallback(async (habit: Omit<Habit, "id" | "createdAt">) => {

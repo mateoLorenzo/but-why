@@ -12,7 +12,9 @@ export interface DayStatus {
   date: string; // YYYY-MM-DD
   completed: boolean;
   dayLabel: string; // M, T, W, T, F, S, S (English)
+  dayIndex: number; // 0-6 (Sun-Sat)
   isToday: boolean;
+  isFuture: boolean;
 }
 
 // Record of habitId -> { date -> completed }

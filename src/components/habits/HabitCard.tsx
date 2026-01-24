@@ -39,7 +39,7 @@ export const HabitCard = ({ habit, onToggleDay, onPress }: HabitCardProps) => {
             <Text style={styles.habitName}>{habit.name}</Text>
           </View>
           <Ionicons
-            name="chevron-forward"
+            name="ellipsis-vertical"
             size={20}
             color={colors.neutral[400]}
           />
@@ -52,6 +52,7 @@ export const HabitCard = ({ habit, onToggleDay, onPress }: HabitCardProps) => {
               dayLabel={day.dayLabel}
               completed={day.completed}
               isToday={day.isToday}
+              isFuture={day.isFuture}
               accentColor={habit.color}
               onPress={() => onToggleDay(habit.id, day.date)}
             />
