@@ -1,11 +1,14 @@
 import { habitsStorage } from "@/src/storage/habits";
 import colors from "@/src/theme/colors";
 import { fonts } from "@/src/theme/fonts";
+import { Habit } from "@/src/types/habit";
 import { AppText as Text } from "@/src/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useState } from "react";
+import * as Haptics from "expo-haptics";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
+  Alert,
   Platform,
   Pressable,
   ScrollView,
@@ -51,18 +54,43 @@ const FREQUENCY_OPTIONS = [
 const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 
 const CreateHabit = () => {
+  const { id: habitId } = useLocalSearchParams<{ id?: string }>();
+  const isEditMode = !!habitId;
+
   const [name, setName] = useState("");
   const [selectedColor, setSelectedColor] = useState(HABIT_COLORS[0]);
   const [selectedIcon, setSelectedIcon] = useState<HabitIcon>(HABIT_ICONS[0]);
   const [selectedFrequency, setSelectedFrequency] = useState("daily");
   const [customDays, setCustomDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
+  const [existingHabit, setExistingHabit] = useState<Habit | null>(null);
   const { top } = useSafeAreaInsets();
+
+  // Load existing habit data when editing
+  useEffect(() => {
+    if (habitId) {
+      const loadHabit = async () => {
+        const habits = await habitsStorage.getHabits();
+        const habit = habits.find((h) => h.id === habitId);
+        if (habit) {
+          setExistingHabit(habit);
+          setName(habit.name);
+          // Find matching color or use first as default
+          const matchingColor = HABIT_COLORS.find((c) => c === habit.color);
+          if (matchingColor) setSelectedColor(matchingColor);
+          setSelectedIcon(habit.icon as HabitIcon);
+          setSelectedFrequency(habit.frequency);
+          setCustomDays(habit.days);
+        }
+      };
+      loadHabit();
+    }
+  }, [habitId]);
 
   const handleClose = () => {
     router.back();
   };
 
-  const handleCreate = async () => {
+  const handleSave = async () => {
     if (!name.trim()) return;
 
     const days =
@@ -70,17 +98,57 @@ const CreateHabit = () => {
         ? customDays
         : FREQUENCY_OPTIONS.find((f) => f.id === selectedFrequency)?.days || [];
 
-    await habitsStorage.addHabit({
-      id: Date.now().toString(),
-      name: name.trim(),
-      color: selectedColor,
-      icon: selectedIcon,
-      frequency: selectedFrequency,
-      days,
-      createdAt: new Date(),
-    });
+    if (isEditMode && existingHabit) {
+      // Update existing habit
+      const habits = await habitsStorage.getHabits();
+      const updatedHabits = habits.map((habit) =>
+        habit.id === habitId
+          ? {
+              ...habit,
+              name: name.trim(),
+              color: selectedColor,
+              icon: selectedIcon,
+              frequency: selectedFrequency,
+              days,
+            }
+          : habit,
+      );
+      await habitsStorage.saveHabits(updatedHabits);
+    } else {
+      // Create new habit
+      await habitsStorage.addHabit({
+        id: Date.now().toString(),
+        name: name.trim(),
+        color: selectedColor,
+        icon: selectedIcon,
+        frequency: selectedFrequency,
+        days,
+        createdAt: new Date(),
+      });
+    }
 
     router.back();
+  };
+
+  const handleDelete = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert(
+      "Delete Habit",
+      `Are you sure you want to delete "${name}"? This action cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            if (habitId) {
+              await habitsStorage.deleteHabit(habitId);
+              router.back();
+            }
+          },
+        },
+      ],
+    );
   };
 
   const toggleCustomDay = (dayIndex: number) => {
@@ -111,9 +179,11 @@ const CreateHabit = () => {
         >
           <Text style={styles.headerButtonText}>Cancel</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>New Habit</Text>
+        <Text style={styles.headerTitle}>
+          {isEditMode ? "Edit Habit" : "New Habit"}
+        </Text>
         <Pressable
-          onPress={handleCreate}
+          onPress={handleSave}
           style={({ pressed }) => [
             styles.headerButton,
             !isFormValid && styles.headerButtonDisabled,
@@ -128,7 +198,7 @@ const CreateHabit = () => {
               !isFormValid && styles.headerButtonTextDisabled,
             ]}
           >
-            Create
+            {isEditMode ? "Save" : "Create"}
           </Text>
         </Pressable>
       </View>
@@ -281,6 +351,24 @@ const CreateHabit = () => {
             </View>
           )}
         </View>
+
+        {/* Delete Button (only in edit mode) */}
+        {isEditMode && (
+          <Pressable
+            onPress={handleDelete}
+            style={({ pressed }) => [
+              styles.deleteButton,
+              pressed && styles.deleteButtonPressed,
+            ]}
+          >
+            <Ionicons
+              name="trash-outline"
+              size={20}
+              color={colors.danger[600]}
+            />
+            <Text style={styles.deleteButtonText}>Delete Habit</Text>
+          </Pressable>
+        )}
       </ScrollView>
     </View>
   );
@@ -292,6 +380,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.neutral[100],
+    paddingBottom: 20,
   },
   pressed: {
     opacity: 0.7,
@@ -461,5 +550,26 @@ const styles = StyleSheet.create({
   },
   dayOptionTextSelected: {
     color: colors.base.white,
+  },
+  deleteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    marginTop: 8,
+    backgroundColor: colors.danger[100],
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.danger[200],
+  },
+  deleteButtonPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.98 }],
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    fontFamily: fonts.medium,
+    color: colors.danger[600],
   },
 });

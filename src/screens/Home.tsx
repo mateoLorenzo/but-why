@@ -35,6 +35,10 @@ const Home = () => {
     router.push("/create-habit");
   };
 
+  const handleEditHabit = (habitId: string) => {
+    router.push(`/create-habit?id=${habitId}`);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -89,6 +93,7 @@ const Home = () => {
                 key={habit.id}
                 habit={habit}
                 onToggleDay={handleToggleDay}
+                onPress={() => handleEditHabit(habit.id)}
               />
             ))}
           </View>

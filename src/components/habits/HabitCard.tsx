@@ -4,17 +4,21 @@ import { HabitWithWeekStatus } from "@/src/types/habit";
 import { AppText as Text } from "@/src/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { DayIndicator } from "./DayIndicator";
 
 interface HabitCardProps {
   habit: HabitWithWeekStatus;
   onToggleDay: (habitId: string, date: string) => void;
+  onPress: () => void;
 }
 
-export const HabitCard = ({ habit, onToggleDay }: HabitCardProps) => {
+export const HabitCard = ({ habit, onToggleDay, onPress }: HabitCardProps) => {
   return (
-    <View style={styles.container}>
+    <Pressable
+      style={({ pressed }) => [styles.container, pressed && styles.pressed]}
+      onPress={onPress}
+    >
       <View style={[styles.accentBar, { backgroundColor: habit.color }]} />
 
       <View style={styles.content}>
@@ -71,7 +75,7 @@ export const HabitCard = ({ habit, onToggleDay }: HabitCardProps) => {
           </View>
         )}
       </View>
-    </View>
+    </Pressable>
   );
 };
 
@@ -86,6 +90,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
+  },
+  pressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.98 }],
   },
   accentBar: {
     width: 4,
