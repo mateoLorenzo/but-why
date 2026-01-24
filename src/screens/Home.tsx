@@ -1,5 +1,6 @@
+import { AppText as Text } from "@/src/ui/Text";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 const Home = () => {
   return (
