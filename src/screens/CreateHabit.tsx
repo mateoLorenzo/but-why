@@ -1,12 +1,16 @@
 import { habitsStorage } from "@/src/storage/habits";
 import colors from "@/src/theme/colors";
 import { fonts } from "@/src/theme/fonts";
-import { Habit } from "@/src/types/habit";
+import { CompletionRecord, Habit } from "@/src/types/habit";
 import { AppText as Text } from "@/src/ui/Text";
+import {
+  formatMonthYear,
+  getMatchingDaysForMonth,
+} from "@/src/utils/dates";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Platform,
@@ -63,13 +67,21 @@ const CreateHabit = () => {
   const [selectedFrequency, setSelectedFrequency] = useState("daily");
   const [customDays, setCustomDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
   const [existingHabit, setExistingHabit] = useState<Habit | null>(null);
+  const [completions, setCompletions] = useState<CompletionRecord>({});
+  const [historyMonth, setHistoryMonth] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  });
   const { top } = useSafeAreaInsets();
 
   // Load existing habit data when editing
   useEffect(() => {
     if (habitId) {
       const loadHabit = async () => {
-        const habits = await habitsStorage.getHabits();
+        const [habits, allCompletions] = await Promise.all([
+          habitsStorage.getHabits(),
+          habitsStorage.getCompletions(),
+        ]);
         const habit = habits.find((h) => h.id === habitId);
         if (habit) {
           setExistingHabit(habit);
@@ -80,11 +92,81 @@ const CreateHabit = () => {
           setSelectedIcon(habit.icon as HabitIcon);
           setSelectedFrequency(habit.frequency);
           setCustomDays(habit.days);
+          setCompletions(allCompletions);
         }
       };
       loadHabit();
     }
   }, [habitId]);
+
+  // Get the current active days based on frequency selection
+  const activeDays = useMemo(() => {
+    if (selectedFrequency === "custom") {
+      return customDays;
+    }
+    return (
+      FREQUENCY_OPTIONS.find((f) => f.id === selectedFrequency)?.days || []
+    );
+  }, [selectedFrequency, customDays]);
+
+  // Get the days for the selected month that match the habit's frequency
+  const historyDays = useMemo(() => {
+    if (!isEditMode || activeDays.length === 0) return [];
+    return getMatchingDaysForMonth(
+      historyMonth.year,
+      historyMonth.month,
+      activeDays,
+    );
+  }, [isEditMode, activeDays, historyMonth]);
+
+  // Check if we can navigate to next month (can't go beyond current month)
+  const canGoToNextMonth = useMemo(() => {
+    const now = new Date();
+    return (
+      historyMonth.year < now.getFullYear() ||
+      (historyMonth.year === now.getFullYear() &&
+        historyMonth.month < now.getMonth())
+    );
+  }, [historyMonth]);
+
+  // Navigate to previous month
+  const goToPreviousMonth = () => {
+    setHistoryMonth((prev) => {
+      if (prev.month === 0) {
+        return { year: prev.year - 1, month: 11 };
+      }
+      return { year: prev.year, month: prev.month - 1 };
+    });
+  };
+
+  // Navigate to next month
+  const goToNextMonth = () => {
+    if (!canGoToNextMonth) return;
+    setHistoryMonth((prev) => {
+      if (prev.month === 11) {
+        return { year: prev.year + 1, month: 0 };
+      }
+      return { year: prev.year, month: prev.month + 1 };
+    });
+  };
+
+  // Get completions for this habit
+  const habitCompletions = useMemo(() => {
+    if (!habitId) return {};
+    return completions[habitId] || {};
+  }, [habitId, completions]);
+
+  // Toggle completion for a specific day in the history
+  const handleToggleHistoryDay = async (date: string) => {
+    if (!habitId) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const updatedCompletions = await habitsStorage.toggleCompletion(
+      habitId,
+      date,
+    );
+    setCompletions(updatedCompletions);
+  };
 
   const handleClose = () => {
     router.back();
@@ -352,6 +434,114 @@ const CreateHabit = () => {
           )}
         </View>
 
+        {/* History Section (only in edit mode) */}
+        {isEditMode && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>History</Text>
+
+            {/* Month Navigation */}
+            <View style={styles.monthNavigation}>
+              <Pressable
+                onPress={goToPreviousMonth}
+                style={({ pressed }) => [
+                  styles.monthNavButton,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Ionicons
+                  name="chevron-back"
+                  size={22}
+                  color={colors.neutral[600]}
+                />
+              </Pressable>
+
+              <Text style={styles.monthLabel}>
+                {formatMonthYear(historyMonth.year, historyMonth.month)}
+              </Text>
+
+              <Pressable
+                onPress={goToNextMonth}
+                style={({ pressed }) => [
+                  styles.monthNavButton,
+                  !canGoToNextMonth && styles.monthNavButtonDisabled,
+                  pressed && canGoToNextMonth && styles.pressed,
+                ]}
+                disabled={!canGoToNextMonth}
+              >
+                <Ionicons
+                  name="chevron-forward"
+                  size={22}
+                  color={
+                    canGoToNextMonth
+                      ? colors.neutral[600]
+                      : colors.neutral[300]
+                  }
+                />
+              </Pressable>
+            </View>
+
+            {/* Days Grid */}
+            <View style={styles.historyContainer}>
+              {historyDays.length > 0 ? (
+                historyDays.map((day) => {
+                  const isCompleted = habitCompletions[day.date] || false;
+                  return (
+                    <Pressable
+                      key={day.date}
+                      style={({ pressed }) => [
+                        styles.historyDay,
+                        isCompleted && {
+                          backgroundColor: `${selectedColor}18`,
+                          borderColor: selectedColor,
+                        },
+                        pressed && styles.pressed,
+                      ]}
+                      onPress={() => handleToggleHistoryDay(day.date)}
+                    >
+                      <Text
+                        style={[
+                          styles.historyDayLabel,
+                          isCompleted && { color: selectedColor },
+                        ]}
+                      >
+                        {day.dayLabel}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.historyDayNumber,
+                          isCompleted && { color: selectedColor },
+                        ]}
+                      >
+                        {new Date(day.date + "T12:00:00").getDate()}
+                      </Text>
+                      {isCompleted && (
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={16}
+                          color={selectedColor}
+                          style={styles.historyCheckIcon}
+                        />
+                      )}
+                      {day.isToday && (
+                        <View
+                          style={[
+                            styles.todayIndicator,
+                            { backgroundColor: selectedColor },
+                          ]}
+                        />
+                      )}
+                    </Pressable>
+                  );
+                })
+              ) : (
+                <Text style={styles.noHistoryText}>
+                  No matching days this month
+                </Text>
+              )}
+            </View>
+          </View>
+        )}
+
         {/* Delete Button (only in edit mode) */}
         {isEditMode && (
           <Pressable
@@ -550,6 +740,83 @@ const styles = StyleSheet.create({
   },
   dayOptionTextSelected: {
     color: colors.base.white,
+  },
+  monthNavigation: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+    backgroundColor: colors.base.white,
+    borderRadius: 12,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+  },
+  monthNavButton: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+  },
+  monthNavButtonDisabled: {
+    opacity: 0.4,
+  },
+  monthLabel: {
+    fontSize: 16,
+    fontFamily: fonts.semiBold,
+    color: colors.auxiliary[700],
+  },
+  historyContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    backgroundColor: colors.base.white,
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    minHeight: 80,
+  },
+  noHistoryText: {
+    fontSize: 14,
+    fontFamily: fonts.regular,
+    color: colors.neutral[400],
+    textAlign: "center",
+    width: "100%",
+    paddingVertical: 20,
+  },
+  historyDay: {
+    width: 44,
+    alignItems: "center",
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: colors.neutral[200],
+    backgroundColor: colors.neutral[50],
+    position: "relative",
+  },
+  historyDayLabel: {
+    fontSize: 11,
+    fontFamily: fonts.medium,
+    color: colors.neutral[400],
+    marginBottom: 2,
+  },
+  historyDayNumber: {
+    fontSize: 15,
+    fontFamily: fonts.semiBold,
+    color: colors.neutral[600],
+  },
+  historyCheckIcon: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+  },
+  todayIndicator: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    marginTop: 4,
   },
   deleteButton: {
     flexDirection: "row",

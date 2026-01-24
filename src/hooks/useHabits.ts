@@ -5,7 +5,10 @@ import {
   Habit,
   HabitWithWeekStatus,
 } from "@/src/types/habit";
-import { getTodayAndNextMatchingDays } from "@/src/utils/dates";
+import {
+  getDaysCenteredOnToday,
+  getLastNMatchingDays,
+} from "@/src/utils/dates";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 export const useHabits = () => {
@@ -33,8 +36,8 @@ export const useHabits = () => {
     return habits.map((habit) => {
       const habitCompletions = completions[habit.id] || {};
 
-      // Get today + next 6 days that match this habit's frequency
-      const matchingDays = getTodayAndNextMatchingDays(7, habit.days);
+      // Get 3 past days + today + 3 future days (centered on today)
+      const matchingDays = getDaysCenteredOnToday(habit.days);
 
       const weekStatus: DayStatus[] = matchingDays.map((day) => ({
         ...day,
@@ -42,13 +45,30 @@ export const useHabits = () => {
         completed: day.isFuture ? false : habitCompletions[day.date] || false,
       }));
 
-      // Calculate streak (count consecutive past completions)
+      // Calculate streak: count consecutive completions going back from today
+      // Get last 60 matching days to calculate streak properly
+      const pastDays = getLastNMatchingDays(60, habit.days);
       let streak = 0;
-      // Only count today if completed
-      if (weekStatus[0]?.isToday && weekStatus[0]?.completed) {
-        streak = 1;
+
+      // pastDays is ordered [oldest, ..., newest(today)]
+      // Iterate from newest to oldest
+      for (let i = pastDays.length - 1; i >= 0; i--) {
+        const day = pastDays[i];
+        const isCompleted = habitCompletions[day.date] || false;
+
+        if (day.isToday) {
+          // Today: add to streak if completed, but don't break if not
+          if (isCompleted) streak++;
+        } else {
+          // Past days: must be completed to continue streak
+          if (isCompleted) {
+            streak++;
+          } else {
+            // Found a gap, stop counting
+            break;
+          }
+        }
       }
-      // For proper streak, we'd need to check past days - for now simplified
 
       return {
         ...habit,

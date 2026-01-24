@@ -45,10 +45,23 @@ const Home = () => {
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <View>
+        <Pressable
+          style={({ pressed }) => [
+            styles.headerButton,
+            pressed && styles.headerButtonPressed,
+          ]}
+          onPress={() => {
+            // TODO: Open settings
+          }}
+        >
+          <Ionicons name="settings-outline" size={24} color={colors.neutral[500]} />
+        </Pressable>
+
+        <View style={styles.headerCenter}>
           <Text style={styles.title}>Keep going</Text>
-          <Text style={styles.greeting}>Straight towards the mountains</Text>
+          <Text style={styles.greeting}>The mountains are waiting</Text>
         </View>
+
         <Pressable
           style={({ pressed }) => [
             styles.addButton,
@@ -114,7 +127,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingBottom: 16,
     backgroundColor: colors.base.white,
     shadowColor: colors.auxiliary[700],
@@ -125,15 +138,30 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral[200],
   },
+  headerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerButtonPressed: {
+    opacity: 0.6,
+    transform: [{ scale: 0.96 }],
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
   greeting: {
     fontSize: 14,
     fontFamily: fonts.regular,
     color: colors.neutral[400],
-    marginTop: 5,
+    marginTop: 2,
   },
   title: {
-    fontSize: 28,
-    fontFamily: fonts.medium,
+    fontSize: 24,
+    fontFamily: fonts.semiBold,
     color: colors.auxiliary[700],
   },
   addButton: {
