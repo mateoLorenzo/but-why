@@ -10,6 +10,7 @@ import {
 import { AppText as Text } from "@/src/ui/Text";
 import { getLastSevenDays } from "@/src/utils/dates";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   Pressable,
@@ -66,8 +67,7 @@ const Home = () => {
   };
 
   const handleAddHabit = () => {
-    // TODO: Open bottom sheet to add habit
-    console.log("Add habit pressed");
+    router.push("/create-habit");
   };
 
   return (
@@ -142,13 +142,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 16,
     backgroundColor: colors.base.white,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
     shadowColor: colors.auxiliary[700],
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.neutral[200],
   },
   greeting: {
     fontSize: 14,

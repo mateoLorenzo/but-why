@@ -30,6 +30,13 @@ export default function RootLayout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="home" />
+      <Stack.Screen
+        name="create-habit"
+        options={{
+          presentation: "modal",
+          animation: "slide_from_bottom",
+        }}
+      />
     </Stack>
   );
 }
