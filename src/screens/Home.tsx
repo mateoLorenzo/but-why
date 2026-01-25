@@ -39,6 +39,10 @@ const Home = () => {
     router.push(`/create-habit?id=${habitId}`);
   };
 
+  const handleOpenSettings = () => {
+    router.push("/settings");
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -50,9 +54,7 @@ const Home = () => {
             styles.headerButton,
             pressed && styles.headerButtonPressed,
           ]}
-          onPress={() => {
-            // TODO: Open settings
-          }}
+          onPress={handleOpenSettings}
         >
           <Ionicons name="settings-outline" size={24} color={colors.neutral[500]} />
         </Pressable>

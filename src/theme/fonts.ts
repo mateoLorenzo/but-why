@@ -2,6 +2,7 @@ export const fonts = {
   regular: "OpenSauceOne-Regular",
   medium: "OpenSauceOne-Medium",
   semiBold: "OpenSauceOne-SemiBold",
+  italic: "OpenSauceOne-Italic",
 } as const;
 
 export const typography = {

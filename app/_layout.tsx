@@ -10,6 +10,7 @@ export default function RootLayout() {
     "OpenSauceOne-Regular": require("../assets/fonts/OpenSauceOne-Regular.ttf"),
     "OpenSauceOne-Medium": require("../assets/fonts/OpenSauceOne-Medium.ttf"),
     "OpenSauceOne-SemiBold": require("../assets/fonts/OpenSauceOne-SemiBold.ttf"),
+    "OpenSauceOne-Italic": require("../assets/fonts/OpenSauceOne-Italic.ttf"),
   });
 
   useEffect(() => {
@@ -32,6 +33,13 @@ export default function RootLayout() {
       <Stack.Screen name="home" />
       <Stack.Screen
         name="create-habit"
+        options={{
+          presentation: "modal",
+          animation: "slide_from_bottom",
+        }}
+      />
+      <Stack.Screen
+        name="settings"
         options={{
           presentation: "modal",
           animation: "slide_from_bottom",
