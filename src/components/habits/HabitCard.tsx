@@ -91,6 +91,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
+    marginBottom: 12,
   },
   pressed: {
     opacity: 0.7,

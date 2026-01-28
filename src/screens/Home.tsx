@@ -2,14 +2,15 @@ import { HabitCard } from "@/src/components/habits/HabitCard";
 import { useHabits } from "@/src/hooks/useHabits";
 import colors from "@/src/theme/colors";
 import { fonts } from "@/src/theme/fonts";
+import { HabitWithWeekStatus } from "@/src/types/habit";
 import { AppText as Text } from "@/src/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback } from "react";
 import {
   ActivityIndicator,
+  FlatList,
   Pressable,
-  ScrollView,
   StatusBar,
   StyleSheet,
   View,
@@ -27,9 +28,12 @@ const Home = () => {
     }, [refresh]),
   );
 
-  const handleToggleDay = async (habitId: string, date: string) => {
-    await toggleCompletion(habitId, date);
-  };
+  const handleToggleDay = useCallback(
+    async (habitId: string, date: string) => {
+      await toggleCompletion(habitId, date);
+    },
+    [toggleCompletion],
+  );
 
   const handleAddHabit = () => {
     router.push("/create-habit");
@@ -42,6 +46,33 @@ const Home = () => {
   const handleOpenSettings = () => {
     router.push("/settings");
   };
+
+  const renderHabitItem = useCallback(
+    ({ item }: { item: HabitWithWeekStatus }) => (
+      <HabitCard
+        habit={item}
+        onToggleDay={handleToggleDay}
+        onPress={() => handleEditHabit(item.id)}
+      />
+    ),
+    [handleToggleDay],
+  );
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyState}>
+      <Ionicons name="list-outline" size={48} color={colors.neutral[300]} />
+      <Text style={styles.emptyTitle}>No habits yet</Text>
+      <Text style={styles.emptySubtitle}>
+        Tap the + button to create your first habit
+      </Text>
+    </View>
+  );
+
+  const renderListHeader = () => <View style={styles.listHeader} />;
+
+  const renderListFooter = () => (
+    <View style={{ height: insets.bottom + 24 }} />
+  );
 
   return (
     <View style={styles.container}>
@@ -56,7 +87,11 @@ const Home = () => {
           ]}
           onPress={handleOpenSettings}
         >
-          <Ionicons name="settings-outline" size={24} color={colors.neutral[500]} />
+          <Ionicons
+            name="settings-outline"
+            size={24}
+            color={colors.neutral[500]}
+          />
         </Pressable>
 
         <View style={styles.headerCenter}>
@@ -76,44 +111,36 @@ const Home = () => {
       </View>
 
       {/* Habits List */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 24 },
-          habits.length === 0 && styles.scrollContentEmpty,
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        {isLoading ? (
-          <View style={styles.loadingState}>
-            <ActivityIndicator size="large" color={colors.primary[500]} />
-          </View>
-        ) : habits.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Ionicons
-              name="list-outline"
-              size={48}
-              color={colors.neutral[300]}
-            />
-            <Text style={styles.emptyTitle}>No habits yet</Text>
-            <Text style={styles.emptySubtitle}>
-              Tap the + button to create your first habit
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.habitsList}>
-            {habits.map((habit) => (
-              <HabitCard
-                key={habit.id}
-                habit={habit}
-                onToggleDay={handleToggleDay}
-                onPress={() => handleEditHabit(habit.id)}
-              />
-            ))}
-          </View>
-        )}
-      </ScrollView>
+      {isLoading ? (
+        <View style={styles.loadingState}>
+          <ActivityIndicator size="large" color={colors.primary[500]} />
+        </View>
+      ) : (
+        // <FlashList
+        //   data={habits}
+        //   renderItem={renderHabitItem}
+        //   // @ts-ignore - estimatedItemSize exists in FlashList v2
+        //   estimatedItemSize={190}
+        //   keyExtractor={(item) => item.id}
+        //   ListHeaderComponent={renderListHeader}
+        //   ListFooterComponent={renderListFooter}
+        //   ListEmptyComponent={renderEmptyState}
+        //   showsVerticalScrollIndicator={false}
+        //   contentContainerStyle={styles.flashListContent}
+        // />
+        <FlatList
+          data={habits}
+          renderItem={renderHabitItem}
+          // @ts-ignore - estimatedItemSize exists in FlashList v2
+          estimatedItemSize={190}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={renderListHeader}
+          ListFooterComponent={renderListFooter}
+          ListEmptyComponent={renderEmptyState}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.flashListContent}
+        />
+      )}
     </View>
   );
 };
@@ -183,24 +210,17 @@ const styles = StyleSheet.create({
     opacity: 0.85,
     transform: [{ scale: 0.96 }],
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
+  flashListContent: {
     paddingHorizontal: 20,
-    paddingTop: 20,
   },
-  scrollContentEmpty: {
-    flex: 1,
+  listHeader: {
+    height: 8,
   },
   loadingState: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingTop: 80,
-  },
-  habitsList: {
-    gap: 12,
   },
   emptyState: {
     flex: 1,
