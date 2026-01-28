@@ -113,7 +113,11 @@ const Home = () => {
       {/* Habits List */}
       {isLoading ? (
         <View style={styles.loadingState}>
-          <ActivityIndicator size="large" color={colors.primary[500]} />
+          <ActivityIndicator
+            size="large"
+            style={{ marginTop: 20 }}
+            color={colors.primary[500]}
+          />
         </View>
       ) : (
         <FlashList
