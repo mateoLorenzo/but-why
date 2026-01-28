@@ -5,11 +5,11 @@ import { fonts } from "@/src/theme/fonts";
 import { HabitWithWeekStatus } from "@/src/types/habit";
 import { AppText as Text } from "@/src/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
+import { FlashList } from "@shopify/flash-list";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback } from "react";
 import {
   ActivityIndicator,
-  FlatList,
   Pressable,
   StatusBar,
   StyleSheet,
@@ -116,19 +116,7 @@ const Home = () => {
           <ActivityIndicator size="large" color={colors.primary[500]} />
         </View>
       ) : (
-        // <FlashList
-        //   data={habits}
-        //   renderItem={renderHabitItem}
-        //   // @ts-ignore - estimatedItemSize exists in FlashList v2
-        //   estimatedItemSize={190}
-        //   keyExtractor={(item) => item.id}
-        //   ListHeaderComponent={renderListHeader}
-        //   ListFooterComponent={renderListFooter}
-        //   ListEmptyComponent={renderEmptyState}
-        //   showsVerticalScrollIndicator={false}
-        //   contentContainerStyle={styles.flashListContent}
-        // />
-        <FlatList
+        <FlashList
           data={habits}
           renderItem={renderHabitItem}
           // @ts-ignore - estimatedItemSize exists in FlashList v2
