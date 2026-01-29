@@ -101,7 +101,20 @@ const Home = () => {
 
         <Pressable
           style={({ pressed }) => [
-            styles.addButton,
+            // styles.addButton,
+            {
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              backgroundColor: colors.primary[500],
+              alignItems: "center",
+              justifyContent: "center",
+              shadowColor: colors.primary[700],
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 4,
+            },
             pressed && styles.addButtonPressed,
           ]}
           onPress={handleAddHabit}
@@ -113,11 +126,7 @@ const Home = () => {
       {/* Habits List */}
       {isLoading ? (
         <View style={styles.loadingState}>
-          <ActivityIndicator
-            size="large"
-            style={{ marginTop: 20 }}
-            color={colors.primary[500]}
-          />
+          <ActivityIndicator size="large" color={colors.primary[500]} />
         </View>
       ) : (
         <FlashList
