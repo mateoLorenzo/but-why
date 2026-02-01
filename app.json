@@ -33,6 +33,6 @@
         "projectId": "add9493b-e3fe-4e5d-9831-32cffa31f6cc"
       }
     },
-    "plugins": ["expo-router"]
+    "plugins": ["expo-router", "@react-native-community/datetimepicker"]
   }
 }

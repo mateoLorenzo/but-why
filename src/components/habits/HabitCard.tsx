@@ -14,13 +14,24 @@ interface HabitCardProps {
 }
 
 export const HabitCard = ({ habit, onToggleDay, onPress }: HabitCardProps) => {
+  const scheduleText =
+    habit.startTime && habit.endTime
+      ? `${habit.startTime} - ${habit.endTime}`
+      : habit.startTime
+      ? `From ${habit.startTime}`
+      : habit.endTime
+      ? `Until ${habit.endTime}`
+      : null;
+
   return (
     <Pressable
-      style={({ pressed }) => [styles.container, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.container,
+        { borderColor: `${habit.color}80` },
+        pressed && styles.pressed,
+      ]}
       onPress={onPress}
     >
-      <View style={[styles.accentBar, { backgroundColor: habit.color }]} />
-
       <View style={styles.content}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
@@ -30,9 +41,18 @@ export const HabitCard = ({ habit, onToggleDay, onPress }: HabitCardProps) => {
                 { backgroundColor: `${habit.color}18` },
               ]}
             >
-              <Text style={styles.iconEmoji}>{habit.icon}</Text>
+              <Ionicons
+                name={habit.icon as keyof typeof Ionicons.glyphMap}
+                size={18}
+                color={habit.color}
+              />
             </View>
-            <Text style={styles.habitName}>{habit.name}</Text>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.habitName}>{habit.name}</Text>
+              {scheduleText && (
+                <Text style={styles.scheduleText}>{scheduleText}</Text>
+              )}
+            </View>
           </View>
           <Ionicons
             name="ellipsis-vertical"
@@ -78,20 +98,15 @@ export const HabitCard = ({ habit, onToggleDay, onPress }: HabitCardProps) => {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
     backgroundColor: colors.background.secondary,
     borderRadius: 16,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: colors.border.subtle,
     marginBottom: 12,
   },
   pressed: {
     opacity: 0.7,
     transform: [{ scale: 0.98 }],
-  },
-  accentBar: {
-    width: 4,
   },
   content: {
     flex: 1,
@@ -107,6 +122,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+    flex: 1,
+  },
+  headerTextContainer: {
+    flex: 1,
+    gap: 2,
   },
   iconContainer: {
     width: 32,
@@ -115,13 +135,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  iconEmoji: {
-    fontSize: 18,
-  },
   habitName: {
     fontSize: 17,
     fontFamily: fonts.semiBold,
     color: colors.text.primary,
+  },
+  scheduleText: {
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: colors.text.tertiary,
   },
   weekRow: {
     flexDirection: "row",

@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   listHeader: {
-    height: 8,
+    height: 12,
   },
   loadingState: {
     flex: 1,

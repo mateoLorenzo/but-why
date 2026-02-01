@@ -5,11 +5,14 @@ import { CompletionRecord, Habit } from "@/src/types/habit";
 import { AppText as Text } from "@/src/ui/Text";
 import { formatMonthYear, getMatchingDaysForMonth } from "@/src/utils/dates";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  FlatList,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -17,7 +20,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import EmojiPicker, { type EmojiType } from "rn-emoji-keyboard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const HABIT_COLORS = [
@@ -29,21 +31,126 @@ const HABIT_COLORS = [
   "#06B6D4",
 ];
 
-const PRESET_EMOJIS = [
-  "💪",
-  "📚",
-  "💧",
-  "🧘",
-  "🏃",
-  "😴",
-  "🥗",
-  "✍️",
-  "💊",
-  "🦷",
-  "💰",
-];
+// Main preset icons (2 rows of 6)
+const PRESET_ICONS = [
+  "barbell-outline",
+  "book-outline",
+  "water-outline",
+  "leaf-outline",
+  "walk-outline",
+  "bed-outline",
+  "nutrition-outline",
+  "pencil-outline",
+  "medical-outline",
+  "happy-outline",
+  "wallet-outline",
+] as const;
 
-const DEFAULT_EMOJI = "💪";
+// Extended icons for the modal
+const EXTENDED_ICONS = [
+  // Fitness & Health
+  "fitness-outline",
+  "bicycle-outline",
+  "football-outline",
+  "basketball-outline",
+  "tennisball-outline",
+  "golf-outline",
+  "body-outline",
+  "heart-outline",
+  "pulse-outline",
+  "bandage-outline",
+  // Mind & Wellness
+  "brain-outline",
+  "eye-outline",
+  "ear-outline",
+  "rose-outline",
+  "sunny-outline",
+  "moon-outline",
+  "cloudy-night-outline",
+  "sparkles-outline",
+  // Productivity & Work
+  "laptop-outline",
+  "desktop-outline",
+  "code-slash-outline",
+  "terminal-outline",
+  "briefcase-outline",
+  "clipboard-outline",
+  "document-text-outline",
+  "mail-outline",
+  "calendar-outline",
+  "time-outline",
+  "alarm-outline",
+  "hourglass-outline",
+  // Learning & Creativity
+  "school-outline",
+  "library-outline",
+  "language-outline",
+  "musical-notes-outline",
+  "musical-note-outline",
+  "mic-outline",
+  "headset-outline",
+  "camera-outline",
+  "color-palette-outline",
+  "brush-outline",
+  // Social & Communication
+  "people-outline",
+  "person-outline",
+  "call-outline",
+  "chatbubble-outline",
+  "hand-left-outline",
+  "thumbs-up-outline",
+  // Home & Life
+  "home-outline",
+  "bed-outline",
+  "cafe-outline",
+  "restaurant-outline",
+  "wine-outline",
+  "beer-outline",
+  "pizza-outline",
+  "fast-food-outline",
+  "ice-cream-outline",
+  "fish-outline",
+  "paw-outline",
+  "car-outline",
+  "airplane-outline",
+  "globe-outline",
+  "map-outline",
+  // Finance & Shopping
+  "cash-outline",
+  "card-outline",
+  "cart-outline",
+  "pricetag-outline",
+  "gift-outline",
+  // Nature & Environment
+  "flower-outline",
+  "earth-outline",
+  "rainy-outline",
+  "snow-outline",
+  "thermometer-outline",
+  "bonfire-outline",
+  // Tech & Tools
+  "settings-outline",
+  "construct-outline",
+  "hammer-outline",
+  "bulb-outline",
+  "flash-outline",
+  "battery-charging-outline",
+  "wifi-outline",
+  "bluetooth-outline",
+  // Misc
+  "star-outline",
+  "trophy-outline",
+  "medal-outline",
+  "ribbon-outline",
+  "flag-outline",
+  "rocket-outline",
+  "planet-outline",
+  "infinite-outline",
+  "shield-checkmark-outline",
+  "checkmark-circle-outline",
+] as const;
+
+const DEFAULT_ICON = "barbell-outline";
 
 const FREQUENCY_OPTIONS = [
   { id: "daily", label: "Every day", days: [0, 1, 2, 3, 4, 5, 6] },
@@ -60,8 +167,8 @@ const CreateHabit = () => {
 
   const [name, setName] = useState("");
   const [selectedColor, setSelectedColor] = useState(HABIT_COLORS[0]);
-  const [selectedEmoji, setSelectedEmoji] = useState(DEFAULT_EMOJI);
-  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [selectedIcon, setSelectedIcon] = useState(DEFAULT_ICON);
+  const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
   const [selectedFrequency, setSelectedFrequency] = useState("daily");
   const [customDays, setCustomDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
   const [existingHabit, setExistingHabit] = useState<Habit | null>(null);
@@ -70,7 +177,29 @@ const CreateHabit = () => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
   });
-  const { top } = useSafeAreaInsets();
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [endTime, setEndTime] = useState<Date | null>(null);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+  const { top, bottom } = useSafeAreaInsets();
+
+  // Helper to format time as HH:mm
+  const formatTime = (date: Date | null): string => {
+    if (!date) return "";
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+
+  // Helper to parse HH:mm string to Date
+  const parseTimeString = (timeStr: string): Date => {
+    const [hours, minutes] = timeStr.split(":").map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    return date;
+  };
 
   // Load existing habit data when editing
   useEffect(() => {
@@ -87,10 +216,12 @@ const CreateHabit = () => {
           // Find matching color or use first as default
           const matchingColor = HABIT_COLORS.find((c) => c === habit.color);
           if (matchingColor) setSelectedColor(matchingColor);
-          setSelectedEmoji(habit.icon || DEFAULT_EMOJI);
+          setSelectedIcon(habit.icon || DEFAULT_ICON);
           setSelectedFrequency(habit.frequency);
           setCustomDays(habit.days);
           setCompletions(allCompletions);
+          if (habit.startTime) setStartTime(parseTimeString(habit.startTime));
+          if (habit.endTime) setEndTime(parseTimeString(habit.endTime));
         }
       };
       loadHabit();
@@ -187,9 +318,11 @@ const CreateHabit = () => {
               ...habit,
               name: name.trim(),
               color: selectedColor,
-              icon: selectedEmoji,
+              icon: selectedIcon,
               frequency: selectedFrequency,
               days,
+              startTime: startTime ? formatTime(startTime) : undefined,
+              endTime: endTime ? formatTime(endTime) : undefined,
             }
           : habit
       );
@@ -200,10 +333,12 @@ const CreateHabit = () => {
         id: Date.now().toString(),
         name: name.trim(),
         color: selectedColor,
-        icon: selectedEmoji,
+        icon: selectedIcon,
         frequency: selectedFrequency,
         days,
         createdAt: new Date(),
+        startTime: startTime ? formatTime(startTime) : undefined,
+        endTime: endTime ? formatTime(endTime) : undefined,
       });
     }
 
@@ -285,7 +420,10 @@ const CreateHabit = () => {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: bottom },
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -297,7 +435,11 @@ const CreateHabit = () => {
               { backgroundColor: `${selectedColor}18` },
             ]}
           >
-            <Text style={styles.previewEmoji}>{selectedEmoji}</Text>
+            <Ionicons
+              name={selectedIcon as keyof typeof Ionicons.glyphMap}
+              size={36}
+              color={selectedColor}
+            />
           </View>
           <Text style={styles.previewName}>{name || "Habit name"}</Text>
         </View>
@@ -315,46 +457,63 @@ const CreateHabit = () => {
           />
         </View>
 
-        {/* Emoji Selection */}
+        {/* Icon Selection */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Icon</Text>
-          <View style={styles.emojiGrid}>
-            {PRESET_EMOJIS.map((emoji) => (
-              <Pressable
-                key={emoji}
-                style={({ pressed }) => [
-                  styles.emojiOption,
-                  selectedEmoji === emoji && {
-                    backgroundColor: `${selectedColor}18`,
-                    borderColor: selectedColor,
-                  },
-                  pressed && styles.pressed,
-                ]}
-                onPress={() => setSelectedEmoji(emoji)}
-              >
-                <Text style={styles.emojiOptionText}>{emoji}</Text>
-              </Pressable>
-            ))}
-            {/* Custom emoji picker button */}
+          <View style={styles.iconGrid}>
+            {PRESET_ICONS.map((icon) => {
+              const isSelected = selectedIcon === icon;
+              return (
+                <Pressable
+                  key={icon}
+                  style={({ pressed }) => [
+                    styles.iconOption,
+                    isSelected && {
+                      backgroundColor: selectedColor,
+                      borderColor: selectedColor,
+                    },
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => setSelectedIcon(icon)}
+                >
+                  <Ionicons
+                    name={icon as keyof typeof Ionicons.glyphMap}
+                    size={24}
+                    color={
+                      isSelected ? colors.base.white : colors.text.tertiary
+                    }
+                  />
+                </Pressable>
+              );
+            })}
+            {/* More icons button */}
             <Pressable
               style={({ pressed }) => [
-                styles.emojiOption,
-                !PRESET_EMOJIS.includes(selectedEmoji) && {
-                  backgroundColor: `${selectedColor}18`,
+                styles.iconOption,
+                !PRESET_ICONS.includes(
+                  selectedIcon as (typeof PRESET_ICONS)[number]
+                ) && {
+                  backgroundColor: selectedColor,
                   borderColor: selectedColor,
                 },
                 pressed && styles.pressed,
               ]}
-              onPress={() => setIsEmojiPickerOpen(true)}
+              onPress={() => setIsIconPickerOpen(true)}
             >
-              {PRESET_EMOJIS.includes(selectedEmoji) ? (
+              {PRESET_ICONS.includes(
+                selectedIcon as (typeof PRESET_ICONS)[number]
+              ) ? (
                 <Ionicons
-                  name="add"
+                  name="ellipsis-horizontal"
                   size={24}
                   color={colors.text.tertiary}
                 />
               ) : (
-                <Text style={styles.emojiOptionText}>{selectedEmoji}</Text>
+                <Ionicons
+                  name={selectedIcon as keyof typeof Ionicons.glyphMap}
+                  size={24}
+                  color={colors.base.white}
+                />
               )}
             </Pressable>
           </View>
@@ -447,6 +606,118 @@ const CreateHabit = () => {
             </View>
           )}
         </View>
+
+        {/* Time Selection */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Schedule (optional)</Text>
+          <View style={styles.timeRow}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.timeButton,
+                startTime && {
+                  backgroundColor: `${selectedColor}18`,
+                  borderColor: selectedColor,
+                },
+                pressed && styles.pressed,
+              ]}
+              onPress={() => setShowStartPicker(true)}
+            >
+              <Ionicons
+                name="time-outline"
+                size={18}
+                color={startTime ? selectedColor : colors.text.tertiary}
+              />
+              <Text
+                style={[
+                  styles.timeButtonText,
+                  startTime && { color: selectedColor },
+                ]}
+              >
+                {startTime ? formatTime(startTime) : "Start time"}
+              </Text>
+            </Pressable>
+
+            <Text style={styles.timeSeparator}>—</Text>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.timeButton,
+                endTime && {
+                  backgroundColor: `${selectedColor}18`,
+                  borderColor: selectedColor,
+                },
+                pressed && styles.pressed,
+              ]}
+              onPress={() => setShowEndPicker(true)}
+            >
+              <Ionicons
+                name="time-outline"
+                size={18}
+                color={endTime ? selectedColor : colors.text.tertiary}
+              />
+              <Text
+                style={[
+                  styles.timeButtonText,
+                  endTime && { color: selectedColor },
+                ]}
+              >
+                {endTime ? formatTime(endTime) : "End time"}
+              </Text>
+            </Pressable>
+          </View>
+
+          {(startTime || endTime) && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.clearTimeButton,
+                pressed && styles.pressed,
+              ]}
+              onPress={() => {
+                setStartTime(null);
+                setEndTime(null);
+              }}
+            >
+              <Ionicons
+                name="close-circle-outline"
+                size={16}
+                color={colors.text.tertiary}
+              />
+              <Text style={styles.clearTimeText}>Clear schedule</Text>
+            </Pressable>
+          )}
+        </View>
+
+        {showStartPicker && (
+          <DateTimePicker
+            value={startTime || new Date()}
+            mode="time"
+            is24Hour={true}
+            display="spinner"
+            onChange={(event, date) => {
+              setShowStartPicker(false);
+              if (event.type === "set" && date) {
+                setStartTime(date);
+              }
+            }}
+            themeVariant="dark"
+          />
+        )}
+
+        {showEndPicker && (
+          <DateTimePicker
+            value={endTime || new Date()}
+            mode="time"
+            is24Hour={true}
+            display="spinner"
+            onChange={(event, date) => {
+              setShowEndPicker(false);
+              if (event.type === "set" && date) {
+                setEndTime(date);
+              }
+            }}
+            themeVariant="dark"
+          />
+        )}
 
         {/* History Section (only in edit mode) */}
         {isEditMode && (
@@ -575,31 +846,64 @@ const CreateHabit = () => {
         )}
       </ScrollView>
 
-      <EmojiPicker
-        open={isEmojiPickerOpen}
-        onClose={() => setIsEmojiPickerOpen(false)}
-        onEmojiSelected={(emoji: EmojiType) => {
-          setSelectedEmoji(emoji.emoji);
-        }}
-        theme={{
-          backdrop: colors.background.primary + "cc",
-          knob: colors.text.tertiary,
-          container: colors.background.secondary,
-          header: colors.text.primary,
-          category: {
-            icon: colors.text.tertiary,
-            iconActive: selectedColor,
-            container: colors.background.secondary,
-            containerActive: `${selectedColor}18`,
-          },
-          search: {
-            background: colors.background.elevated,
-            placeholder: colors.text.tertiary,
-            text: colors.text.primary,
-            icon: colors.text.tertiary,
-          },
-        }}
-      />
+      {/* Icon Picker Modal */}
+      <Modal
+        visible={isIconPickerOpen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setIsIconPickerOpen(false)}
+      >
+        <View style={[styles.modalContainer, { paddingBottom: bottom }]}>
+          <View style={[styles.modalHeader, { paddingTop: top + 16 }]}>
+            <Text style={styles.modalTitle}>Choose Icon</Text>
+            <Pressable
+              onPress={() => setIsIconPickerOpen(false)}
+              style={({ pressed }) => [
+                styles.modalCloseButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Ionicons name="close" size={24} color={colors.text.primary} />
+            </Pressable>
+          </View>
+          <FlatList
+            data={EXTENDED_ICONS}
+            numColumns={6}
+            keyExtractor={(item) => item}
+            contentContainerStyle={[
+              styles.modalIconGrid,
+              { paddingBottom: 20 },
+            ]}
+            renderItem={({ item: icon }) => {
+              const isSelected = selectedIcon === icon;
+              return (
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.modalIconOption,
+                    isSelected && {
+                      backgroundColor: selectedColor,
+                      borderColor: selectedColor,
+                    },
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => {
+                    setSelectedIcon(icon);
+                    setIsIconPickerOpen(false);
+                  }}
+                >
+                  <Ionicons
+                    name={icon as keyof typeof Ionicons.glyphMap}
+                    size={28}
+                    color={
+                      isSelected ? colors.base.white : colors.text.tertiary
+                    }
+                  />
+                </Pressable>
+              );
+            }}
+          />
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -675,9 +979,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  previewEmoji: {
-    fontSize: 36,
-  },
   previewName: {
     fontSize: 20,
     fontFamily: fonts.semiBold,
@@ -703,13 +1004,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.subtle,
   },
-  emojiGrid: {
+  iconGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
     justifyContent: "space-between",
   },
-  emojiOption: {
+  iconOption: {
     width: 46,
     height: 46,
     borderRadius: 12,
@@ -719,8 +1020,42 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.border.subtle,
   },
-  emojiOptionText: {
-    fontSize: 22,
+  modalContainer: {
+    flex: 1,
+    backgroundColor: colors.background.primary,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.subtle,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: fonts.semiBold,
+    color: colors.text.primary,
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalIconGrid: {
+    padding: 16,
+    gap: 12,
+  },
+  modalIconOption: {
+    flex: 1,
+    aspectRatio: 1,
+    maxWidth: "16.666%",
+    margin: 4,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background.secondary,
+    borderWidth: 1.5,
+    borderColor: colors.border.subtle,
   },
   colorRow: {
     flexDirection: "row",
@@ -788,6 +1123,43 @@ const styles = StyleSheet.create({
   },
   dayOptionTextSelected: {
     color: colors.base.white,
+  },
+  timeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  timeButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: colors.background.secondary,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1.5,
+    borderColor: colors.border.subtle,
+  },
+  timeButtonText: {
+    fontSize: 15,
+    fontFamily: fonts.medium,
+    color: colors.text.tertiary,
+  },
+  timeSeparator: {
+    fontSize: 16,
+    color: colors.text.tertiary,
+  },
+  clearTimeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 8,
+  },
+  clearTimeText: {
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: colors.text.tertiary,
   },
   monthNavigation: {
     flexDirection: "row",

@@ -6,6 +6,8 @@ export interface Habit {
   frequency: string; // "daily" | "weekdays" | "custom"
   days: number[]; // [0-6] representing Sun-Sat
   createdAt: Date;
+  startTime?: string; // HH:mm format (e.g., "20:00")
+  endTime?: string; // HH:mm format (e.g., "21:30")
 }
 
 export interface DayStatus {

@@ -26,13 +26,24 @@ export const HabitDayCard = ({
     onToggle();
   };
 
+  const scheduleText =
+    habit.startTime && habit.endTime
+      ? `${habit.startTime} - ${habit.endTime}`
+      : habit.startTime
+      ? `From ${habit.startTime}`
+      : habit.endTime
+      ? `Until ${habit.endTime}`
+      : null;
+
   return (
     <Pressable
-      style={({ pressed }) => [styles.container, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.container,
+        { borderColor: `${habit.color}75` },
+        pressed && styles.pressed,
+      ]}
       onPress={onPress}
     >
-      <View style={[styles.accentBar, { backgroundColor: habit.color }]} />
-
       <View style={styles.content}>
         {/* Left side: Icon + Name */}
         <View style={styles.leftSection}>
@@ -42,10 +53,17 @@ export const HabitDayCard = ({
               { backgroundColor: `${habit.color}18` },
             ]}
           >
-            <Text style={styles.iconEmoji}>{habit.icon}</Text>
+            <Ionicons
+              name={habit.icon as keyof typeof Ionicons.glyphMap}
+              size={20}
+              color={habit.color}
+            />
           </View>
           <View style={styles.textContainer}>
             <Text style={styles.habitName}>{habit.name}</Text>
+            {scheduleText && (
+              <Text style={styles.scheduleText}>{scheduleText}</Text>
+            )}
             {habit.currentStreak > 0 && (
               <View style={styles.streakRow}>
                 <Ionicons name="flame" size={12} color={habit.color} />
@@ -90,20 +108,15 @@ export const HabitDayCard = ({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
     backgroundColor: colors.background.secondary,
-    borderRadius: 12,
+    borderRadius: 20,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: colors.border.subtle,
     marginBottom: 10,
   },
   pressed: {
     opacity: 0.7,
     transform: [{ scale: 0.98 }],
-  },
-  accentBar: {
-    width: 4,
   },
   content: {
     flex: 1,
@@ -125,9 +138,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  iconEmoji: {
-    fontSize: 20,
-  },
   textContainer: {
     flex: 1,
     gap: 2,
@@ -136,6 +146,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: fonts.semiBold,
     color: colors.text.primary,
+  },
+  scheduleText: {
+    fontSize: 12,
+    fontFamily: fonts.regular,
+    color: colors.text.tertiary,
   },
   streakRow: {
     flexDirection: "row",
