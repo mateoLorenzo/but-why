@@ -42,11 +42,7 @@ export const HabitDayCard = ({
               { backgroundColor: `${habit.color}18` },
             ]}
           >
-            <Ionicons
-              name={habit.icon as keyof typeof Ionicons.glyphMap}
-              size={18}
-              color={habit.color}
-            />
+            <Text style={styles.iconEmoji}>{habit.icon}</Text>
           </View>
           <View style={styles.textContainer}>
             <Text style={styles.habitName}>{habit.name}</Text>
@@ -128,6 +124,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
+  },
+  iconEmoji: {
+    fontSize: 20,
   },
   textContainer: {
     flex: 1,

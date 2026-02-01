@@ -17,6 +17,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import EmojiPicker, { type EmojiType } from "rn-emoji-keyboard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const HABIT_COLORS = [
@@ -28,22 +29,21 @@ const HABIT_COLORS = [
   "#06B6D4",
 ];
 
-const HABIT_ICONS = [
-  "sunny-outline",
-  "fitness-outline",
-  "book-outline",
-  "water-outline",
-  "leaf-outline",
-  "heart-outline",
-  "musical-notes-outline",
-  "code-slash-outline",
-  "language-outline",
-  "bed-outline",
-  "walk-outline",
-  "bicycle-outline",
-] as const;
+const PRESET_EMOJIS = [
+  "💪",
+  "📚",
+  "💧",
+  "🧘",
+  "🏃",
+  "😴",
+  "🥗",
+  "✍️",
+  "💊",
+  "🦷",
+  "💰",
+];
 
-type HabitIcon = (typeof HABIT_ICONS)[number];
+const DEFAULT_EMOJI = "💪";
 
 const FREQUENCY_OPTIONS = [
   { id: "daily", label: "Every day", days: [0, 1, 2, 3, 4, 5, 6] },
@@ -60,7 +60,8 @@ const CreateHabit = () => {
 
   const [name, setName] = useState("");
   const [selectedColor, setSelectedColor] = useState(HABIT_COLORS[0]);
-  const [selectedIcon, setSelectedIcon] = useState<HabitIcon>(HABIT_ICONS[0]);
+  const [selectedEmoji, setSelectedEmoji] = useState(DEFAULT_EMOJI);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [selectedFrequency, setSelectedFrequency] = useState("daily");
   const [customDays, setCustomDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
   const [existingHabit, setExistingHabit] = useState<Habit | null>(null);
@@ -86,7 +87,7 @@ const CreateHabit = () => {
           // Find matching color or use first as default
           const matchingColor = HABIT_COLORS.find((c) => c === habit.color);
           if (matchingColor) setSelectedColor(matchingColor);
-          setSelectedIcon(habit.icon as HabitIcon);
+          setSelectedEmoji(habit.icon || DEFAULT_EMOJI);
           setSelectedFrequency(habit.frequency);
           setCustomDays(habit.days);
           setCompletions(allCompletions);
@@ -186,7 +187,7 @@ const CreateHabit = () => {
               ...habit,
               name: name.trim(),
               color: selectedColor,
-              icon: selectedIcon,
+              icon: selectedEmoji,
               frequency: selectedFrequency,
               days,
             }
@@ -199,7 +200,7 @@ const CreateHabit = () => {
         id: Date.now().toString(),
         name: name.trim(),
         color: selectedColor,
-        icon: selectedIcon,
+        icon: selectedEmoji,
         frequency: selectedFrequency,
         days,
         createdAt: new Date(),
@@ -296,7 +297,7 @@ const CreateHabit = () => {
               { backgroundColor: `${selectedColor}18` },
             ]}
           >
-            <Ionicons name={selectedIcon} size={32} color={selectedColor} />
+            <Text style={styles.previewEmoji}>{selectedEmoji}</Text>
           </View>
           <Text style={styles.previewName}>{name || "Habit name"}</Text>
         </View>
@@ -314,32 +315,48 @@ const CreateHabit = () => {
           />
         </View>
 
-        {/* Icon Selection */}
+        {/* Emoji Selection */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Icon</Text>
-          <View style={styles.iconGrid}>
-            {HABIT_ICONS.map((icon) => (
+          <View style={styles.emojiGrid}>
+            {PRESET_EMOJIS.map((emoji) => (
               <Pressable
-                key={icon}
+                key={emoji}
                 style={({ pressed }) => [
-                  styles.iconOption,
-                  selectedIcon === icon && {
+                  styles.emojiOption,
+                  selectedEmoji === emoji && {
                     backgroundColor: `${selectedColor}18`,
                     borderColor: selectedColor,
                   },
                   pressed && styles.pressed,
                 ]}
-                onPress={() => setSelectedIcon(icon)}
+                onPress={() => setSelectedEmoji(emoji)}
               >
-                <Ionicons
-                  name={icon}
-                  size={24}
-                  color={
-                    selectedIcon === icon ? selectedColor : colors.text.tertiary
-                  }
-                />
+                <Text style={styles.emojiOptionText}>{emoji}</Text>
               </Pressable>
             ))}
+            {/* Custom emoji picker button */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.emojiOption,
+                !PRESET_EMOJIS.includes(selectedEmoji) && {
+                  backgroundColor: `${selectedColor}18`,
+                  borderColor: selectedColor,
+                },
+                pressed && styles.pressed,
+              ]}
+              onPress={() => setIsEmojiPickerOpen(true)}
+            >
+              {PRESET_EMOJIS.includes(selectedEmoji) ? (
+                <Ionicons
+                  name="add"
+                  size={24}
+                  color={colors.text.tertiary}
+                />
+              ) : (
+                <Text style={styles.emojiOptionText}>{selectedEmoji}</Text>
+              )}
+            </Pressable>
           </View>
         </View>
 
@@ -557,6 +574,32 @@ const CreateHabit = () => {
           </Pressable>
         )}
       </ScrollView>
+
+      <EmojiPicker
+        open={isEmojiPickerOpen}
+        onClose={() => setIsEmojiPickerOpen(false)}
+        onEmojiSelected={(emoji: EmojiType) => {
+          setSelectedEmoji(emoji.emoji);
+        }}
+        theme={{
+          backdrop: colors.background.primary + "cc",
+          knob: colors.text.tertiary,
+          container: colors.background.secondary,
+          header: colors.text.primary,
+          category: {
+            icon: colors.text.tertiary,
+            iconActive: selectedColor,
+            container: colors.background.secondary,
+            containerActive: `${selectedColor}18`,
+          },
+          search: {
+            background: colors.background.elevated,
+            placeholder: colors.text.tertiary,
+            text: colors.text.primary,
+            icon: colors.text.tertiary,
+          },
+        }}
+      />
     </View>
   );
 };
@@ -632,6 +675,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  previewEmoji: {
+    fontSize: 36,
+  },
   previewName: {
     fontSize: 20,
     fontFamily: fonts.semiBold,
@@ -657,13 +703,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.subtle,
   },
-  iconGrid: {
+  emojiGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
     justifyContent: "space-between",
   },
-  iconOption: {
+  emojiOption: {
     width: 46,
     height: 46,
     borderRadius: 12,
@@ -672,6 +718,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.secondary,
     borderWidth: 1.5,
     borderColor: colors.border.subtle,
+  },
+  emojiOptionText: {
+    fontSize: 22,
   },
   colorRow: {
     flexDirection: "row",

@@ -30,11 +30,7 @@ export const HabitCard = ({ habit, onToggleDay, onPress }: HabitCardProps) => {
                 { backgroundColor: `${habit.color}18` },
               ]}
             >
-              <Ionicons
-                name={habit.icon as keyof typeof Ionicons.glyphMap}
-                size={18}
-                color={habit.color}
-              />
+              <Text style={styles.iconEmoji}>{habit.icon}</Text>
             </View>
             <Text style={styles.habitName}>{habit.name}</Text>
           </View>
@@ -118,6 +114,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
+  },
+  iconEmoji: {
+    fontSize: 18,
   },
   habitName: {
     fontSize: 17,
