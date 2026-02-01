@@ -24,3 +24,9 @@ export interface HabitWithWeekStatus extends Habit {
   weekStatus: DayStatus[];
   currentStreak: number;
 }
+
+export interface HabitForDay extends Habit {
+  isCompletedForDay: boolean;
+  isScheduledForDay: boolean;
+  currentStreak: number;
+}

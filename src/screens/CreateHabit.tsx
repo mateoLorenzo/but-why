@@ -3,10 +3,7 @@ import colors from "@/src/theme/colors";
 import { fonts } from "@/src/theme/fonts";
 import { CompletionRecord, Habit } from "@/src/types/habit";
 import { AppText as Text } from "@/src/ui/Text";
-import {
-  formatMonthYear,
-  getMatchingDaysForMonth,
-} from "@/src/utils/dates";
+import { formatMonthYear, getMatchingDaysForMonth } from "@/src/utils/dates";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
@@ -23,12 +20,12 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const HABIT_COLORS = [
-  colors.primary[500],
-  colors.success[600],
-  colors.warning[600],
-  colors.info[600],
-  colors.danger[600],
-  colors.auxiliary[500],
+  "#3B82F6",
+  "#22C55E",
+  "#F59E0B",
+  "#8B5CF6",
+  "#EF4444",
+  "#06B6D4",
 ];
 
 const HABIT_ICONS = [
@@ -115,7 +112,7 @@ const CreateHabit = () => {
     return getMatchingDaysForMonth(
       historyMonth.year,
       historyMonth.month,
-      activeDays,
+      activeDays
     );
   }, [isEditMode, activeDays, historyMonth]);
 
@@ -163,7 +160,7 @@ const CreateHabit = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const updatedCompletions = await habitsStorage.toggleCompletion(
       habitId,
-      date,
+      date
     );
     setCompletions(updatedCompletions);
   };
@@ -193,7 +190,7 @@ const CreateHabit = () => {
               frequency: selectedFrequency,
               days,
             }
-          : habit,
+          : habit
       );
       await habitsStorage.saveHabits(updatedHabits);
     } else {
@@ -229,7 +226,7 @@ const CreateHabit = () => {
             }
           },
         },
-      ],
+      ]
     );
   };
 
@@ -237,7 +234,7 @@ const CreateHabit = () => {
     setCustomDays((prev) =>
       prev.includes(dayIndex)
         ? prev.filter((d) => d !== dayIndex)
-        : [...prev, dayIndex].sort(),
+        : [...prev, dayIndex].sort()
     );
   };
 
@@ -310,7 +307,7 @@ const CreateHabit = () => {
           <TextInput
             style={styles.textInput}
             placeholder="e.g. Meditate, Exercise, Read..."
-            placeholderTextColor={colors.neutral[400]}
+            placeholderTextColor={colors.text.tertiary}
             value={name}
             onChangeText={setName}
             // autoFocus
@@ -338,7 +335,7 @@ const CreateHabit = () => {
                   name={icon}
                   size={24}
                   color={
-                    selectedIcon === icon ? selectedColor : colors.neutral[500]
+                    selectedIcon === icon ? selectedColor : colors.text.tertiary
                   }
                 />
               </Pressable>
@@ -350,9 +347,9 @@ const CreateHabit = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Color</Text>
           <View style={styles.colorRow}>
-            {HABIT_COLORS.map((color) => (
+            {HABIT_COLORS.map((color, index) => (
               <Pressable
-                key={color}
+                key={`color-${index}`}
                 style={({ pressed }) => [
                   styles.colorOption,
                   { backgroundColor: color },
@@ -451,7 +448,7 @@ const CreateHabit = () => {
                 <Ionicons
                   name="chevron-back"
                   size={22}
-                  color={colors.neutral[600]}
+                  color={colors.text.secondary}
                 />
               </Pressable>
 
@@ -473,8 +470,8 @@ const CreateHabit = () => {
                   size={22}
                   color={
                     canGoToNextMonth
-                      ? colors.neutral[600]
-                      : colors.neutral[300]
+                      ? colors.text.secondary
+                      : colors.text.disabled
                   }
                 />
               </Pressable>
@@ -483,11 +480,11 @@ const CreateHabit = () => {
             {/* Days Grid */}
             <View style={styles.historyContainer}>
               {historyDays.length > 0 ? (
-                historyDays.map((day) => {
+                historyDays.map((day, index) => {
                   const isCompleted = habitCompletions[day.date] || false;
                   return (
                     <Pressable
-                      key={day.date}
+                      key={`${day.date}-${index}`}
                       style={({ pressed }) => [
                         styles.historyDay,
                         isCompleted && {
@@ -569,7 +566,7 @@ export default CreateHabit;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: colors.background.primary,
     paddingBottom: 20,
   },
   pressed: {
@@ -582,9 +579,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.primary,
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
+    borderBottomColor: colors.border.subtle,
   },
   headerButton: {
     paddingVertical: 8,
@@ -597,20 +594,20 @@ const styles = StyleSheet.create({
   headerButtonText: {
     fontSize: 16,
     fontFamily: fonts.regular,
-    color: colors.neutral[500],
+    color: colors.text.secondary,
   },
   headerButtonPrimary: {
-    color: colors.primary[500],
+    color: colors.accent.primary,
     fontFamily: fonts.semiBold,
     textAlign: "right",
   },
   headerButtonTextDisabled: {
-    color: colors.neutral[400],
+    color: colors.text.tertiary,
   },
   headerTitle: {
     fontSize: 17,
     fontFamily: fonts.semiBold,
-    color: colors.auxiliary[700],
+    color: colors.text.primary,
   },
   scrollView: {
     flex: 1,
@@ -622,8 +619,10 @@ const styles = StyleSheet.create({
   previewContainer: {
     alignItems: "center",
     paddingVertical: 24,
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.secondary,
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border.subtle,
     gap: 12,
   },
   previewIcon: {
@@ -636,7 +635,7 @@ const styles = StyleSheet.create({
   previewName: {
     fontSize: 20,
     fontFamily: fonts.semiBold,
-    color: colors.auxiliary[700],
+    color: colors.text.primary,
   },
   section: {
     gap: 12,
@@ -644,19 +643,19 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontFamily: fonts.semiBold,
-    color: colors.neutral[500],
+    color: colors.text.tertiary,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   textInput: {
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.secondary,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
     fontFamily: fonts.regular,
-    color: colors.auxiliary[700],
+    color: colors.text.primary,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: colors.border.subtle,
   },
   iconGrid: {
     flexDirection: "row",
@@ -670,9 +669,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.secondary,
     borderWidth: 1.5,
-    borderColor: colors.neutral[200],
+    borderColor: colors.border.subtle,
   },
   colorRow: {
     flexDirection: "row",
@@ -707,16 +706,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.secondary,
     borderWidth: 1.5,
-    borderColor: colors.neutral[200],
+    borderColor: colors.border.subtle,
     // flex: 1,
     alignItems: "center",
   },
   frequencyOptionText: {
     fontSize: 14,
     fontFamily: fonts.medium,
-    color: colors.neutral[600],
+    color: colors.text.secondary,
   },
   customDaysContainer: {
     flexDirection: "row",
@@ -729,14 +728,14 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.secondary,
     borderWidth: 1.5,
-    borderColor: colors.neutral[200],
+    borderColor: colors.border.subtle,
   },
   dayOptionText: {
     fontSize: 13,
     fontFamily: fonts.semiBold,
-    color: colors.neutral[500],
+    color: colors.text.secondary,
   },
   dayOptionTextSelected: {
     color: colors.base.white,
@@ -746,11 +745,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 12,
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.secondary,
     borderRadius: 12,
     padding: 8,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: colors.border.subtle,
   },
   monthNavButton: {
     width: 36,
@@ -765,23 +764,23 @@ const styles = StyleSheet.create({
   monthLabel: {
     fontSize: 16,
     fontFamily: fonts.semiBold,
-    color: colors.auxiliary[700],
+    color: colors.text.primary,
   },
   historyContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.secondary,
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: colors.border.subtle,
     minHeight: 80,
   },
   noHistoryText: {
     fontSize: 14,
     fontFamily: fonts.regular,
-    color: colors.neutral[400],
+    color: colors.text.tertiary,
     textAlign: "center",
     width: "100%",
     paddingVertical: 20,
@@ -792,20 +791,20 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: colors.neutral[200],
-    backgroundColor: colors.neutral[50],
+    borderColor: colors.border.subtle,
+    backgroundColor: colors.background.elevated,
     position: "relative",
   },
   historyDayLabel: {
     fontSize: 11,
     fontFamily: fonts.medium,
-    color: colors.neutral[400],
+    color: colors.text.secondary,
     marginBottom: 2,
   },
   historyDayNumber: {
     fontSize: 15,
     fontFamily: fonts.semiBold,
-    color: colors.neutral[600],
+    color: colors.text.primary,
   },
   historyCheckIcon: {
     position: "absolute",

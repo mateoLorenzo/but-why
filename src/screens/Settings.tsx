@@ -73,7 +73,7 @@ const SettingItem = ({
       {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
     </View>
     {showChevron && (
-      <Ionicons name="chevron-forward" size={20} color={colors.neutral[400]} />
+      <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
     )}
   </Pressable>
 );
@@ -288,7 +288,7 @@ export default Settings;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: colors.background.primary,
   },
   pressed: {
     opacity: 0.7,
@@ -300,9 +300,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.primary,
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
+    borderBottomColor: colors.border.subtle,
   },
   headerButton: {
     paddingVertical: 8,
@@ -312,12 +312,12 @@ const styles = StyleSheet.create({
   headerButtonText: {
     fontSize: 16,
     fontFamily: fonts.semiBold,
-    color: colors.primary[500],
+    color: colors.accent.primary,
   },
   headerTitle: {
     fontSize: 17,
     fontFamily: fonts.semiBold,
-    color: colors.auxiliary[700],
+    color: colors.text.primary,
   },
   scrollView: {
     flex: 1,
@@ -332,15 +332,15 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: 12,
     fontFamily: fonts.semiBold,
-    color: colors.neutral[500],
+    color: colors.text.tertiary,
     letterSpacing: 0.5,
     marginLeft: 4,
   },
   sectionContent: {
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.secondary,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: colors.border.subtle,
     overflow: "hidden",
   },
   settingItem: {
@@ -349,10 +349,10 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[100],
+    borderBottomColor: colors.border.subtle,
   },
   settingItemPressed: {
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.background.elevated,
   },
   settingIconContainer: {
     width: 36,
@@ -368,12 +368,12 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 16,
     fontFamily: fonts.medium,
-    color: colors.auxiliary[700],
+    color: colors.text.primary,
   },
   settingSubtitle: {
     fontSize: 13,
     fontFamily: fonts.regular,
-    color: colors.neutral[500],
+    color: colors.text.secondary,
   },
   aboutItem: {
     flexDirection: "row",
@@ -384,12 +384,12 @@ const styles = StyleSheet.create({
   aboutLabel: {
     fontSize: 16,
     fontFamily: fonts.medium,
-    color: colors.auxiliary[700],
+    color: colors.text.primary,
   },
   aboutValue: {
     fontSize: 16,
     fontFamily: fonts.regular,
-    color: colors.neutral[500],
+    color: colors.text.secondary,
   },
   footer: {
     alignItems: "center",
@@ -399,11 +399,11 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 14,
     fontFamily: fonts.medium,
-    color: colors.neutral[400],
+    color: colors.text.secondary,
   },
   footerSubtext: {
     fontSize: 12,
     fontFamily: fonts.italic,
-    color: colors.neutral[400],
+    color: colors.text.tertiary,
   },
 });

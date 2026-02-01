@@ -41,7 +41,7 @@ export const HabitCard = ({ habit, onToggleDay, onPress }: HabitCardProps) => {
           <Ionicons
             name="ellipsis-vertical"
             size={20}
-            color={colors.neutral[400]}
+            color={colors.text.secondary}
           />
         </View>
 
@@ -83,14 +83,11 @@ export const HabitCard = ({ habit, onToggleDay, onPress }: HabitCardProps) => {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.secondary,
     borderRadius: 16,
     overflow: "hidden",
-    shadowColor: colors.auxiliary[700],
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.border.subtle,
     marginBottom: 12,
   },
   pressed: {
@@ -125,7 +122,7 @@ const styles = StyleSheet.create({
   habitName: {
     fontSize: 17,
     fontFamily: fonts.semiBold,
-    color: colors.auxiliary[700],
+    color: colors.text.primary,
   },
   weekRow: {
     flexDirection: "row",

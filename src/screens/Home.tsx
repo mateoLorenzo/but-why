@@ -1,13 +1,19 @@
-import { HabitCard } from "@/src/components/habits/HabitCard";
+import { HabitDayCard } from "@/src/components/habits/HabitDayCard";
+import { WeekDaySelector } from "@/src/components/WeekDaySelector";
 import { useHabits } from "@/src/hooks/useHabits";
 import colors from "@/src/theme/colors";
 import { fonts } from "@/src/theme/fonts";
-import { HabitWithWeekStatus } from "@/src/types/habit";
+import { HabitForDay } from "@/src/types/habit";
 import { AppText as Text } from "@/src/ui/Text";
+import {
+  formatDateKey,
+  formatDateShortES,
+  isFutureDate,
+} from "@/src/utils/dates";
 import { Ionicons } from "@expo/vector-icons";
 import { FlashList } from "@shopify/flash-list";
 import { router, useFocusEffect } from "expo-router";
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -19,20 +25,26 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Home = () => {
   const insets = useSafeAreaInsets();
-  const { habits, isLoading, toggleCompletion, refresh } = useHabits();
+  const [selectedDate, setSelectedDate] = useState(formatDateKey(new Date()));
+
+  const { habitsForDay, isLoading, toggleCompletion, refresh } =
+    useHabits(selectedDate);
+
+  const isFuture = isFutureDate(selectedDate);
+  const headerDateLabel = formatDateShortES(selectedDate);
 
   // Refresh habits when screen comes into focus (after creating a new habit)
   useFocusEffect(
     useCallback(() => {
       refresh();
-    }, [refresh]),
+    }, [refresh])
   );
 
-  const handleToggleDay = useCallback(
-    async (habitId: string, date: string) => {
-      await toggleCompletion(habitId, date);
+  const handleToggleHabit = useCallback(
+    async (habitId: string) => {
+      await toggleCompletion(habitId, selectedDate);
     },
-    [toggleCompletion],
+    [toggleCompletion, selectedDate]
   );
 
   const handleAddHabit = () => {
@@ -48,22 +60,31 @@ const Home = () => {
   };
 
   const renderHabitItem = useCallback(
-    ({ item }: { item: HabitWithWeekStatus }) => (
-      <HabitCard
+    ({ item }: { item: HabitForDay }) => (
+      <HabitDayCard
         habit={item}
-        onToggleDay={handleToggleDay}
+        onToggle={() => handleToggleHabit(item.id)}
         onPress={() => handleEditHabit(item.id)}
+        isFutureDay={isFuture}
       />
     ),
-    [handleToggleDay],
+    [handleToggleHabit, isFuture]
   );
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Ionicons name="list-outline" size={48} color={colors.neutral[300]} />
-      <Text style={styles.emptyTitle}>No habits yet</Text>
+      <Ionicons
+        name="calendar-outline"
+        size={48}
+        color={colors.text.tertiary}
+      />
+      <Text style={styles.emptyTitle}>
+        {isFuture ? "Día futuro" : "Sin hábitos para este día"}
+      </Text>
       <Text style={styles.emptySubtitle}>
-        Tap the + button to create your first habit
+        {isFuture
+          ? "No puedes marcar hábitos de días futuros"
+          : "Toca + para crear un hábito"}
       </Text>
     </View>
   );
@@ -76,7 +97,7 @@ const Home = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="light-content" />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
@@ -87,41 +108,29 @@ const Home = () => {
           ]}
           onPress={handleOpenSettings}
         >
-          <Ionicons
-            name="settings-outline"
-            size={24}
-            color={colors.neutral[500]}
-          />
+          <Ionicons name="menu" size={26} color={colors.text.primary} />
         </Pressable>
 
         <View style={styles.headerCenter}>
-          <Text style={styles.title}>Keep going</Text>
-          <Text style={styles.greeting}>The mountains are waiting</Text>
+          <Text style={styles.headerDate}>{headerDateLabel}</Text>
         </View>
 
         <Pressable
           style={({ pressed }) => [
-            // styles.addButton,
-            {
-              width: 44,
-              height: 44,
-              borderRadius: 14,
-              backgroundColor: colors.primary[500],
-              alignItems: "center",
-              justifyContent: "center",
-              shadowColor: colors.primary[700],
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 4,
-            },
-            pressed && styles.addButtonPressed,
+            styles.headerButton,
+            pressed && styles.headerButtonPressed,
           ]}
           onPress={handleAddHabit}
         >
-          <Ionicons name="add" size={24} color={colors.base.white} />
+          <Ionicons name="add" size={28} color={colors.text.primary} />
         </Pressable>
       </View>
+
+      {/* Week Day Selector */}
+      <WeekDaySelector
+        selectedDate={selectedDate}
+        onSelectDate={setSelectedDate}
+      />
 
       {/* Habits List */}
       {isLoading ? (
@@ -130,10 +139,8 @@ const Home = () => {
         </View>
       ) : (
         <FlashList
-          data={habits}
+          data={habitsForDay}
           renderItem={renderHabitItem}
-          // @ts-ignore - estimatedItemSize exists in FlashList v2
-          estimatedItemSize={190}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={renderListHeader}
           ListFooterComponent={renderListFooter}
@@ -151,68 +158,66 @@ export default Home;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: colors.background.primary,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingBottom: 16,
-    backgroundColor: colors.base.white,
-    shadowColor: colors.auxiliary[700],
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
+    paddingBottom: 4,
+    backgroundColor: colors.background.primary,
   },
   headerButton: {
     width: 44,
     height: 44,
-    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
   headerButtonPressed: {
     opacity: 0.6,
-    transform: [{ scale: 0.96 }],
   },
   headerCenter: {
     flex: 1,
     alignItems: "center",
   },
-  greeting: {
-    fontSize: 14,
-    fontFamily: fonts.regular,
-    color: colors.neutral[400],
-    marginTop: 2,
-  },
-  title: {
-    fontSize: 24,
+  headerDate: {
+    fontSize: 22,
     fontFamily: fonts.semiBold,
-    color: colors.auxiliary[700],
+    color: colors.text.primary,
   },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: colors.primary[500],
+  progressContainer: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: colors.primary[700],
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    gap: 10,
+    paddingVertical: 12,
+    marginHorizontal: 20,
+    marginTop: 8,
+    backgroundColor: colors.background.secondary,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border.subtle,
   },
-  addButtonPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.96 }],
+  progressText: {
+    fontSize: 13,
+    fontFamily: fonts.medium,
+    color: colors.text.secondary,
+  },
+  progressBar: {
+    width: 100,
+    height: 4,
+    backgroundColor: colors.background.elevated,
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 2,
   },
   flashListContent: {
     paddingHorizontal: 20,
+    flexGrow: 1,
   },
   listHeader: {
     height: 8,
@@ -227,18 +232,17 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingTop: 80,
     gap: 12,
   },
   emptyTitle: {
     fontSize: 18,
-    fontFamily: fonts.semiBold,
-    color: colors.neutral[500],
+    fontFamily: fonts.medium,
+    color: colors.text.secondary,
   },
   emptySubtitle: {
     fontSize: 14,
     fontFamily: fonts.regular,
-    color: colors.neutral[400],
+    color: colors.text.tertiary,
     textAlign: "center",
   },
 });
