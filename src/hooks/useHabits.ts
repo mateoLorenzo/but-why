@@ -4,11 +4,14 @@ import {
   DayStatus,
   Habit,
   HabitWithWeekStatus,
+  HabitForDay,
 } from "@/src/types/habit";
 import {
   getDaysCenteredOnToday,
   getLastNMatchingDays,
 } from "@/src/utils/dates";
+import { isHabitScheduledForDate } from "@/src/utils/habitFilters";
+import { calculateCurrentStreak } from "@/src/utils/streakCalculator";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 export const useHabits = () => {
@@ -119,6 +122,82 @@ export const useHabits = () => {
     setCompletions(loadedCompletions);
   }, []);
 
+  /**
+   * Get habits for a specific date with completion status and streak information.
+   *
+   * @param dateString - Date in YYYY-MM-DD format
+   * @returns Array of habits scheduled for this date with additional computed fields
+   *
+   * @example
+   * const habitsForToday = getHabitsForDate('2026-02-01');
+   * habitsForToday.forEach(habit => {
+   *   console.log(`${habit.name}: ${habit.completedOnDate ? 'Done' : 'Not done'}`);
+   *   console.log(`Current streak: ${habit.currentStreak}`);
+   * });
+   */
+  const getHabitsForDate = useCallback(
+    (dateString: string): HabitForDay[] => {
+      // Validate YYYY-MM-DD format
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        console.warn(`Invalid date format: ${dateString}. Expected YYYY-MM-DD.`);
+        return [];
+      }
+
+      // Parse the date string
+      const date = new Date(dateString + 'T12:00:00');
+
+      // Validate date
+      if (isNaN(date.getTime())) {
+        console.warn(`Invalid date string: ${dateString}`);
+        return [];
+      }
+
+      // Map all habits to HabitForDay
+      return habits
+        .map((habit): HabitForDay => {
+          const habitCompletions = completions[habit.id] || {};
+          const isScheduledForDate = isHabitScheduledForDate(habit, date);
+          const completedOnDate = habitCompletions[dateString] || false;
+          const currentStreak = calculateCurrentStreak(
+            habit.id,
+            completions,
+            habit.days
+          );
+
+          return {
+            ...habit,
+            isScheduledForDate,
+            completedOnDate,
+            currentStreak,
+          };
+        })
+        .filter((habit) => habit.isScheduledForDate);
+    },
+    [habits, completions]
+  );
+
+  /**
+   * Get the current streak for a specific habit.
+   *
+   * @param habitId - ID of the habit
+   * @returns Current streak count, or 0 if habit not found
+   *
+   * @example
+   * const streak = getStreakForHabit('habit123');
+   * console.log(`Current streak: ${streak} days`);
+   */
+  const getStreakForHabit = useCallback(
+    (habitId: string): number => {
+      const habit = habits.find(h => h.id === habitId);
+      if (!habit) {
+        console.warn(`Habit with id ${habitId} not found`);
+        return 0;
+      }
+      return calculateCurrentStreak(habitId, completions, habit.days);
+    },
+    [habits, completions]
+  );
+
   return {
     habits: habitsWithStatus,
     isLoading,
@@ -126,5 +205,7 @@ export const useHabits = () => {
     deleteHabit,
     toggleCompletion,
     refresh,
+    getHabitsForDate,
+    getStreakForHabit,
   };
 };

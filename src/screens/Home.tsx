@@ -1,25 +1,43 @@
-import { HabitCard } from "@/src/components/habits/HabitCard";
-import { useHabits } from "@/src/hooks/useHabits";
-import colors from "@/src/theme/colors";
-import { fonts } from "@/src/theme/fonts";
-import { HabitWithWeekStatus } from "@/src/types/habit";
-import { AppText as Text } from "@/src/ui/Text";
-import { Ionicons } from "@expo/vector-icons";
-import { FlashList } from "@shopify/flash-list";
-import { router, useFocusEffect } from "expo-router";
-import React, { useCallback } from "react";
+/**
+ * Home Screen (Redesigned)
+ *
+ * Main screen showing habits for the selected date.
+ * Features day navigation and per-day habit completion tracking.
+ *
+ * New Features:
+ * - Day navigator for selecting dates
+ * - Shows only habits scheduled for selected date
+ * - Simplified horizontal habit cards
+ * - Future day protection (disabled checkboxes)
+ * - Empty state when no habits scheduled
+ */
+
+import React, { useCallback, useMemo } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
   StatusBar,
   StyleSheet,
   View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+} from 'react-native';
+import Animated, { FadeIn, Layout } from 'react-native-reanimated';
+import { FlashList } from '@shopify/flash-list';
+import { router, useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { HabitCard } from '@/src/components/habits/HabitCard';
+import { EmptyState } from '@/src/components/habits/EmptyState';
+import { AppHeader, DayNavigator } from '@/src/components/header';
+import { IconButton } from '@/src/components/common/IconButton';
+import { useHabits } from '@/src/hooks/useHabits';
+import { useDayNavigation } from '@/src/hooks/useDayNavigation';
+import { HabitForDay } from '@/src/types/habit';
+import colors from '@/src/theme/colors';
+import { spacing, reanimatedConfig } from '@/src/theme/tokens';
 
 const Home = () => {
   const insets = useSafeAreaInsets();
-  const { habits, isLoading, toggleCompletion, refresh } = useHabits();
+  const { isLoading, toggleCompletion, refresh, getHabitsForDate } = useHabits();
+  const { selectedDate, setSelectedDate, isFutureDay } = useDayNavigation();
 
   // Refresh habits when screen comes into focus (after creating a new habit)
   useFocusEffect(
@@ -28,118 +46,142 @@ const Home = () => {
     }, [refresh]),
   );
 
-  const handleToggleDay = useCallback(
-    async (habitId: string, date: string) => {
-      await toggleCompletion(habitId, date);
+  // Get habits for the selected date
+  const habitsForDate = useMemo(
+    () => getHabitsForDate(selectedDate),
+    [getHabitsForDate, selectedDate]
+  );
+
+  // Check if selected date is in the future
+  const isFuture = useMemo(
+    () => isFutureDay(selectedDate),
+    [isFutureDay, selectedDate]
+  );
+
+  /**
+   * Handle habit completion toggle
+   */
+  const handleToggleCompletion = useCallback(
+    async (habitId: string) => {
+      await toggleCompletion(habitId, selectedDate);
     },
-    [toggleCompletion],
+    [toggleCompletion, selectedDate]
   );
 
-  const handleAddHabit = () => {
-    router.push("/create-habit");
-  };
+  /**
+   * Navigate to create habit screen
+   */
+  const handleAddHabit = useCallback(() => {
+    router.push('/create-habit');
+  }, []);
 
-  const handleEditHabit = (habitId: string) => {
+  /**
+   * Navigate to edit habit screen
+   */
+  const handleEditHabit = useCallback((habitId: string) => {
     router.push(`/create-habit?id=${habitId}`);
-  };
+  }, []);
 
-  const handleOpenSettings = () => {
-    router.push("/settings");
-  };
+  /**
+   * Navigate to settings screen
+   */
+  const handleOpenSettings = useCallback(() => {
+    router.push('/settings');
+  }, []);
 
+  /**
+   * Render individual habit card with staggered entry animation
+   */
   const renderHabitItem = useCallback(
-    ({ item }: { item: HabitWithWeekStatus }) => (
-      <HabitCard
-        habit={item}
-        onToggleDay={handleToggleDay}
-        onPress={() => handleEditHabit(item.id)}
-      />
+    ({ item, index }: { item: HabitForDay; index: number }) => (
+      <Animated.View
+        entering={FadeIn.delay(index * reanimatedConfig.stagger.card).duration(200)}
+        layout={Layout.springify().damping(15)}
+      >
+        <HabitCard
+          habit={item}
+          onToggleCompletion={() => handleToggleCompletion(item.id)}
+          onPress={() => handleEditHabit(item.id)}
+          disabled={isFuture}
+        />
+      </Animated.View>
     ),
-    [handleToggleDay],
+    [handleToggleCompletion, handleEditHabit, isFuture]
   );
 
-  const renderEmptyState = () => (
-    <View style={styles.emptyState}>
-      <Ionicons name="list-outline" size={48} color={colors.neutral[300]} />
-      <Text style={styles.emptyTitle}>No habits yet</Text>
-      <Text style={styles.emptySubtitle}>
-        Tap the + button to create your first habit
-      </Text>
-    </View>
+  /**
+   * Render empty state when no habits scheduled
+   */
+  const renderEmptyComponent = useCallback(
+    () => <EmptyState selectedDate={selectedDate} />,
+    [selectedDate]
   );
 
-  const renderListHeader = () => <View style={styles.listHeader} />;
+  /**
+   * Render list header for spacing
+   */
+  const renderListHeader = useCallback(
+    () => <View style={styles.listHeader} />,
+    []
+  );
 
-  const renderListFooter = () => (
-    <View style={{ height: insets.bottom + 24 }} />
+  /**
+   * Render list footer for bottom spacing
+   */
+  const renderListFooter = useCallback(
+    () => <View style={{ height: insets.bottom + 24 }} />,
+    [insets.bottom]
   );
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="light-content" />
 
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.headerButton,
-            pressed && styles.headerButtonPressed,
-          ]}
-          onPress={handleOpenSettings}
-        >
-          <Ionicons
-            name="settings-outline"
-            size={24}
-            color={colors.neutral[500]}
+      {/* Header with day navigator */}
+      <AppHeader
+        leftAction={
+          <IconButton
+            icon="settings-outline"
+            onPress={handleOpenSettings}
+            variant="ghost"
+            size="md"
+            accessibilityLabel="Open settings"
           />
-        </Pressable>
-
-        <View style={styles.headerCenter}>
-          <Text style={styles.title}>Keep going</Text>
-          <Text style={styles.greeting}>The mountains are waiting</Text>
-        </View>
-
-        <Pressable
-          style={({ pressed }) => [
-            // styles.addButton,
-            {
-              width: 44,
-              height: 44,
-              borderRadius: 14,
-              backgroundColor: colors.primary[500],
-              alignItems: "center",
-              justifyContent: "center",
-              shadowColor: colors.primary[700],
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 4,
-            },
-            pressed && styles.addButtonPressed,
-          ]}
-          onPress={handleAddHabit}
-        >
-          <Ionicons name="add" size={24} color={colors.base.white} />
-        </Pressable>
-      </View>
+        }
+        centerContent={
+          <DayNavigator
+            selectedDate={selectedDate}
+            onDateSelect={setSelectedDate}
+          />
+        }
+        rightAction={
+          <IconButton
+            icon="add"
+            onPress={handleAddHabit}
+            variant="primary"
+            size="md"
+            accessibilityLabel="Add new habit"
+          />
+        }
+        showBorder={true}
+      />
 
       {/* Habits List */}
       {isLoading ? (
         <View style={styles.loadingState}>
-          <ActivityIndicator size="large" color={colors.primary[500]} />
+          <ActivityIndicator size="large" color={colors.accent.primary} />
         </View>
       ) : (
         <FlashList
-          data={habits}
+          data={habitsForDate}
           renderItem={renderHabitItem}
           // @ts-ignore - estimatedItemSize exists in FlashList v2
-          estimatedItemSize={190}
+          estimatedItemSize={72}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={renderListHeader}
           ListFooterComponent={renderListFooter}
-          ListEmptyComponent={renderEmptyState}
+          ListEmptyComponent={renderEmptyComponent}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.flashListContent}
         />
       )}
     </View>
@@ -151,94 +193,15 @@ export default Home;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    backgroundColor: colors.base.white,
-    shadowColor: colors.auxiliary[700],
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
-  },
-  headerButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerButtonPressed: {
-    opacity: 0.6,
-    transform: [{ scale: 0.96 }],
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  greeting: {
-    fontSize: 14,
-    fontFamily: fonts.regular,
-    color: colors.neutral[400],
-    marginTop: 2,
-  },
-  title: {
-    fontSize: 24,
-    fontFamily: fonts.semiBold,
-    color: colors.auxiliary[700],
-  },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: colors.primary[500],
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: colors.primary[700],
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  addButtonPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.96 }],
-  },
-  flashListContent: {
-    paddingHorizontal: 20,
+    backgroundColor: colors.background.primary,
   },
   listHeader: {
-    height: 8,
+    height: spacing.lg,
   },
   loadingState: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 80,
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 80,
-    gap: 12,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontFamily: fonts.semiBold,
-    color: colors.neutral[500],
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    fontFamily: fonts.regular,
-    color: colors.neutral[400],
-    textAlign: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: spacing.xxxxl + spacing.lg,
   },
 });

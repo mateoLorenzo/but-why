@@ -1,6 +1,7 @@
 import { habitsStorage } from "@/src/storage/habits";
 import colors from "@/src/theme/colors";
-import { fonts } from "@/src/theme/fonts";
+import { typography } from "@/src/theme/fonts";
+import { animation, borderRadius, opacity, spacing } from "@/src/theme/tokens";
 import { AppText as Text } from "@/src/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
@@ -15,6 +16,7 @@ import {
   Pressable,
   ScrollView,
   Share,
+  StatusBar,
   StyleSheet,
   View,
 } from "react-native";
@@ -55,13 +57,13 @@ const SettingItem = ({
     <View
       style={[
         styles.settingIconContainer,
-        { backgroundColor: `${iconColor || colors.primary[500]}18` },
+        { backgroundColor: `${iconColor || colors.accent.primary}18` },
       ]}
     >
       <Ionicons
         name={icon}
         size={20}
-        color={danger ? colors.danger[600] : iconColor || colors.primary[500]}
+        color={danger ? colors.danger[600] : iconColor || colors.accent.primary}
       />
     </View>
     <View style={styles.settingContent}>
@@ -73,7 +75,7 @@ const SettingItem = ({
       {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
     </View>
     {showChevron && (
-      <Ionicons name="chevron-forward" size={20} color={colors.neutral[400]} />
+      <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
     )}
   </Pressable>
 );
@@ -165,6 +167,7 @@ const Settings = () => {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
       {/* Header */}
       <View
         style={[
@@ -288,122 +291,115 @@ export default Settings;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: colors.background.primary,
   },
   pressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.96 }],
+    opacity: opacity.pressed,
+    transform: [{ scale: animation.pressScale.normal }],
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: colors.base.white,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
+    borderBottomColor: colors.border.subtle,
   },
   headerButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
     minWidth: 60,
   },
   headerButtonText: {
-    fontSize: 16,
-    fontFamily: fonts.semiBold,
-    color: colors.primary[500],
+    ...typography.bodyMedium,
+    color: colors.accent.primary,
   },
   headerTitle: {
-    fontSize: 17,
-    fontFamily: fonts.semiBold,
-    color: colors.auxiliary[700],
+    ...typography.headline,
+    color: colors.text.primary,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
-    gap: 24,
+    padding: spacing.lg,
+    gap: spacing.xl,
   },
   section: {
-    gap: 8,
+    gap: spacing.sm,
   },
   sectionHeader: {
-    fontSize: 12,
-    fontFamily: fonts.semiBold,
-    color: colors.neutral[500],
-    letterSpacing: 0.5,
-    marginLeft: 4,
+    ...typography.label,
+    color: colors.text.secondary,
+    marginLeft: spacing.xs,
   },
   sectionContent: {
-    backgroundColor: colors.base.white,
-    borderRadius: 12,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: colors.border.subtle,
     overflow: "hidden",
   },
   settingItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 14,
-    gap: 12,
+    padding: spacing.lg,
+    gap: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[100],
+    borderBottomColor: colors.border.subtle,
   },
   settingItemPressed: {
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.background.elevated,
   },
   settingIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.sm,
     alignItems: "center",
     justifyContent: "center",
   },
   settingContent: {
     flex: 1,
-    gap: 2,
+    gap: spacing.xs,
   },
   settingLabel: {
-    fontSize: 16,
-    fontFamily: fonts.medium,
-    color: colors.auxiliary[700],
+    ...typography.bodyMedium,
+    color: colors.text.primary,
   },
   settingSubtitle: {
-    fontSize: 13,
-    fontFamily: fonts.regular,
-    color: colors.neutral[500],
+    ...typography.footnote,
+    color: colors.text.secondary,
   },
   aboutItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 14,
+    padding: spacing.lg,
   },
   aboutLabel: {
-    fontSize: 16,
-    fontFamily: fonts.medium,
-    color: colors.auxiliary[700],
+    ...typography.bodyMedium,
+    color: colors.text.primary,
   },
   aboutValue: {
-    fontSize: 16,
-    fontFamily: fonts.regular,
-    color: colors.neutral[500],
+    ...typography.body,
+    color: colors.text.secondary,
   },
   footer: {
     alignItems: "center",
-    paddingBottom: 20,
-    gap: 4,
+    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    gap: spacing.sm,
   },
   footerText: {
-    fontSize: 14,
-    fontFamily: fonts.medium,
-    color: colors.neutral[400],
+    ...typography.subheadlineMedium,
+    color: colors.text.tertiary,
   },
   footerSubtext: {
-    fontSize: 12,
-    fontFamily: fonts.italic,
-    color: colors.neutral[400],
+    ...typography.caption1,
+    color: colors.text.tertiary,
+    textAlign: "center",
+    lineHeight: 18,
   },
 });

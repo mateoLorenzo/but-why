@@ -24,3 +24,18 @@ export interface HabitWithWeekStatus extends Habit {
   weekStatus: DayStatus[];
   currentStreak: number;
 }
+
+export interface HabitForDay extends Habit {
+  completedOnDate: boolean;
+  isScheduledForDate: boolean;
+  currentStreak: number;
+}
+
+export interface StreakCache {
+  habitId: string;
+  currentStreak: number;
+  longestStreak: number;
+  lastCalculatedDate: string;
+}
+
+export type DayType = 'past' | 'today' | 'future';

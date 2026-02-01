@@ -1,150 +1,136 @@
-import colors from "@/src/theme/colors";
-import { fonts } from "@/src/theme/fonts";
-import { HabitWithWeekStatus } from "@/src/types/habit";
-import { AppText as Text } from "@/src/ui/Text";
-import { Ionicons } from "@expo/vector-icons";
-import React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { DayIndicator } from "./DayIndicator";
+/**
+ * HabitCard Component (Redesigned)
+ *
+ * Simplified horizontal layout for displaying a single habit with completion toggle.
+ * Used in the day-specific habit list view where each card represents one habit
+ * for the selected date.
+ *
+ * New Layout:
+ * [CircularCheckbox] [Habit Name (flex: 1)] [StreakBadge]
+ *
+ * Features:
+ * - Circular checkbox for instant completion toggle
+ * - Habit name with flexible width
+ * - Streak badge showing current streak
+ * - Press to edit habit details
+ * - Future day protection (disabled checkbox)
+ *
+ * @example
+ * <HabitCard
+ *   habit={habitForDay}
+ *   onToggleCompletion={() => toggleHabit(habitForDay.id, selectedDate)}
+ *   onPress={() => editHabit(habitForDay.id)}
+ *   disabled={isFutureDay}
+ * />
+ */
+
+import React, { useRef, useEffect } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence, withTiming } from 'react-native-reanimated';
+import { AppText as Text } from '@/src/ui/Text';
+import { CircularCheckbox } from './CircularCheckbox';
+import { StreakBadge } from './StreakBadge';
+import { HabitForDay } from '@/src/types/habit';
+import colors from '@/src/theme/colors';
+import { typography } from '@/src/theme/fonts';
+import { borderRadius, opacity, spacing, reanimatedConfig } from '@/src/theme/tokens';
 
 interface HabitCardProps {
-  habit: HabitWithWeekStatus;
-  onToggleDay: (habitId: string, date: string) => void;
-  onPress: () => void;
+  habit: HabitForDay;
+  onToggleCompletion: () => void;
+  onPress?: () => void;
+  disabled?: boolean;
 }
 
-export const HabitCard = ({ habit, onToggleDay, onPress }: HabitCardProps) => {
+export const HabitCard: React.FC<HabitCardProps> = ({
+  habit,
+  onToggleCompletion,
+  onPress,
+  disabled = false,
+}) => {
+  const cardScale = useSharedValue(1);
+  const prevCompleted = useRef(habit.completedOnDate);
+
+  /**
+   * Trigger pulse animation when habit is completed
+   */
+  useEffect(() => {
+    // Only pulse when transitioning from uncompleted to completed
+    if (habit.completedOnDate && !prevCompleted.current) {
+      cardScale.value = withSequence(
+        withTiming(1.015, { duration: 100 }),
+        withSpring(1, { damping: 10, stiffness: 300 })
+      );
+    }
+    prevCompleted.current = habit.completedOnDate;
+  }, [habit.completedOnDate]);
+
+  const animatedCardStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: cardScale.value }],
+    };
+  });
+
   return (
-    <Pressable
-      style={({ pressed }) => [styles.container, pressed && styles.pressed]}
-      onPress={onPress}
-    >
-      <View style={[styles.accentBar, { backgroundColor: habit.color }]} />
+    <Animated.View style={animatedCardStyle}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.container,
+          pressed && styles.containerPressed,
+        ]}
+        onPress={onPress}
+        disabled={!onPress}
+      >
+        {/* Circular checkbox for completion */}
+        <CircularCheckbox
+          checked={habit.completedOnDate}
+          onToggle={onToggleCompletion}
+          accentColor={habit.color}
+          size="md"
+          disabled={disabled}
+        />
 
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View
-              style={[
-                styles.iconContainer,
-                { backgroundColor: `${habit.color}18` },
-              ]}
-            >
-              <Ionicons
-                name={habit.icon as keyof typeof Ionicons.glyphMap}
-                size={18}
-                color={habit.color}
-              />
-            </View>
-            <Text style={styles.habitName}>{habit.name}</Text>
-          </View>
-          <Ionicons
-            name="ellipsis-vertical"
-            size={20}
-            color={colors.neutral[400]}
-          />
+        {/* Habit name - takes up remaining space */}
+        <View style={styles.nameContainer}>
+          <Text style={styles.habitName} numberOfLines={1}>
+            {habit.name}
+          </Text>
         </View>
 
-        <View style={styles.weekRow}>
-          {habit.weekStatus.map((day) => (
-            <DayIndicator
-              key={day.date}
-              dayLabel={day.dayLabel}
-              completed={day.completed}
-              isToday={day.isToday}
-              isFuture={day.isFuture}
-              accentColor={habit.color}
-              onPress={() => onToggleDay(habit.id, day.date)}
-            />
-          ))}
-        </View>
-
+        {/* Streak badge - only shown if streak > 0 */}
         {habit.currentStreak > 0 && (
-          <View style={styles.streakContainer}>
-            <View
-              style={[
-                styles.streakBadge,
-                { backgroundColor: `${habit.color}18` },
-              ]}
-            >
-              <Ionicons name="flame" size={14} color={habit.color} />
-              <Text style={[styles.streakText, { color: habit.color }]}>
-                {habit.currentStreak}{" "}
-                {habit.currentStreak === 1 ? "day" : "days"}
-              </Text>
-            </View>
-          </View>
+          <StreakBadge
+            count={habit.currentStreak}
+            variant="inline"
+            size="sm"
+          />
         )}
-      </View>
-    </Pressable>
+      </Pressable>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
-    backgroundColor: colors.base.white,
-    borderRadius: 16,
-    overflow: "hidden",
-    shadowColor: colors.auxiliary[700],
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: 12,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
   },
-  pressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.98 }],
+  containerPressed: {
+    opacity: opacity.pressed,
   },
-  accentBar: {
-    width: 4,
-  },
-  content: {
+  nameContainer: {
     flex: 1,
-    padding: 16,
-    gap: 16,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  iconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
   },
   habitName: {
-    fontSize: 17,
-    fontFamily: fonts.semiBold,
-    color: colors.auxiliary[700],
-  },
-  weekRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 4,
-  },
-  streakContainer: {
-    flexDirection: "row",
-  },
-  streakBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  streakText: {
-    fontSize: 12,
-    fontFamily: fonts.medium,
+    ...typography.headline,
+    color: colors.text.primary,
   },
 });

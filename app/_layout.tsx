@@ -1,4 +1,5 @@
 import colors from "@/src/theme/colors";
+import { DayNavigationProvider } from "@/src/contexts/DayNavigationContext";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
 import { useEffect } from "react";
@@ -23,28 +24,30 @@ export default function RootLayout() {
     return null;
   }
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: colors.neutral[100] },
-      }}
-    >
-      <Stack.Screen name="index" />
-      <Stack.Screen name="home" />
-      <Stack.Screen
-        name="create-habit"
-        options={{
-          presentation: "modal",
-          animation: "slide_from_bottom",
+    <DayNavigationProvider>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.base.black },
         }}
-      />
-      <Stack.Screen
-        name="settings"
-        options={{
-          presentation: "modal",
-          animation: "slide_from_bottom",
-        }}
-      />
-    </Stack>
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="home" />
+        <Stack.Screen
+          name="create-habit"
+          options={{
+            presentation: "modal",
+            animation: "slide_from_bottom",
+          }}
+        />
+        <Stack.Screen
+          name="settings"
+          options={{
+            presentation: "modal",
+            animation: "slide_from_bottom",
+          }}
+        />
+      </Stack>
+    </DayNavigationProvider>
   );
 }
