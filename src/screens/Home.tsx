@@ -79,11 +79,11 @@ const Home = () => {
         color={colors.text.tertiary}
       />
       <Text style={styles.emptyTitle}>
-        {isFuture ? "Día futuro" : "Sin hábitos para este día"}
+        {isFuture ? "Sin hábitos programados" : "Sin hábitos para este día"}
       </Text>
       <Text style={styles.emptySubtitle}>
         {isFuture
-          ? "No puedes marcar hábitos de días futuros"
+          ? "No tienes hábitos para este día"
           : "Toca + para crear un hábito"}
       </Text>
     </View>

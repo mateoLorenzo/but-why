@@ -73,7 +73,11 @@ const SettingItem = ({
       {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
     </View>
     {showChevron && (
-      <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+      <Ionicons
+        name="chevron-forward"
+        size={20}
+        color={colors.text.secondary}
+      />
     )}
   </Pressable>
 );
@@ -159,7 +163,7 @@ const Settings = () => {
             ]);
           },
         },
-      ],
+      ]
     );
   };
 
@@ -266,16 +270,14 @@ const Settings = () => {
 
         {/* Footer */}
         <View style={styles.footer}>
-          {/* <Text style={styles.footerText}>Made with ❤️</Text> */}
-          {/* <Text style={styles.footerSubtext}>But Why © 2026</Text> */}
           <Text style={styles.footerSubtext}>
             &quot;But one of them caught our eye, the one in the center. He
             would neither go towards the feeding grounds at the edge of the ice,
             nor return to the colony. Shortly afterwards we saw him heading
             straight towards the mountains, some 70 kilometers away. Doctor
             Ainslie explained that even if he caught him and brought him back to
-            the colony, he would inmediately head right back for the mountains.
-            BUT WHY? &quot;
+            the colony, he would inmediately head right back for the
+            mountains... But why?&quot;
           </Text>
         </View>
       </ScrollView>
@@ -405,5 +407,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: fonts.italic,
     color: colors.text.tertiary,
+    textAlign: "justify",
   },
 });

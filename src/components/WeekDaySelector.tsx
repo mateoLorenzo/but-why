@@ -100,8 +100,7 @@ export const WeekDaySelector = ({
     return () => clearTimeout(timer);
   }, []);
 
-  const handleSelectDay = (date: string, isFuture: boolean) => {
-    if (isFuture) return;
+  const handleSelectDay = (date: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onSelectDate(date);
     scrollToDate(date, true);
@@ -119,17 +118,16 @@ export const WeekDaySelector = ({
       >
         {days.map((day) => {
           const isSelected = day.date === selectedDate;
-          const isDisabled = day.isFuture;
+          const isFutureStyle = day.isFuture && !isSelected;
 
           return (
             <Pressable
               key={day.date}
-              onPress={() => handleSelectDay(day.date, day.isFuture)}
-              disabled={isDisabled}
+              onPress={() => handleSelectDay(day.date)}
               style={({ pressed }) => [
                 styles.dayItem,
                 isSelected && styles.dayItemSelected,
-                pressed && !isDisabled && styles.dayItemPressed,
+                pressed && styles.dayItemPressed,
               ]}
             >
               <Text
@@ -137,7 +135,7 @@ export const WeekDaySelector = ({
                   styles.dayLabel,
                   isSelected && styles.dayLabelSelected,
                   day.isToday && !isSelected && styles.dayLabelToday,
-                  isDisabled && styles.dayLabelDisabled,
+                  isFutureStyle && styles.dayLabelDisabled,
                 ]}
               >
                 {day.dayLabelShort}
@@ -148,7 +146,7 @@ export const WeekDaySelector = ({
                   styles.dayNumber,
                   isSelected && styles.dayNumberSelected,
                   day.isToday && !isSelected && styles.dayNumberToday,
-                  isDisabled && styles.dayNumberDisabled,
+                  isFutureStyle && styles.dayNumberDisabled,
                 ]}
               >
                 {day.dayNumber}
