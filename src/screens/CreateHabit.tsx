@@ -181,6 +181,8 @@ const CreateHabit = () => {
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const [tempStartTime, setTempStartTime] = useState<Date>(new Date());
+  const [tempEndTime, setTempEndTime] = useState<Date>(new Date());
   const { top, bottom } = useSafeAreaInsets();
 
   // Helper to format time as HH:mm
@@ -620,7 +622,10 @@ const CreateHabit = () => {
                 },
                 pressed && styles.pressed,
               ]}
-              onPress={() => setShowStartPicker(true)}
+              onPress={() => {
+                setTempStartTime(startTime || new Date());
+                setShowStartPicker(true);
+              }}
             >
               <Ionicons
                 name="time-outline"
@@ -648,7 +653,10 @@ const CreateHabit = () => {
                 },
                 pressed && styles.pressed,
               ]}
-              onPress={() => setShowEndPicker(true)}
+              onPress={() => {
+                setTempEndTime(endTime || new Date());
+                setShowEndPicker(true);
+              }}
             >
               <Ionicons
                 name="time-outline"
@@ -687,37 +695,109 @@ const CreateHabit = () => {
           )}
         </View>
 
-        {showStartPicker && (
-          <DateTimePicker
-            value={startTime || new Date()}
-            mode="time"
-            is24Hour={true}
-            display="spinner"
-            onChange={(event, date) => {
-              setShowStartPicker(false);
-              if (event.type === "set" && date) {
-                setStartTime(date);
-              }
-            }}
-            themeVariant="dark"
-          />
-        )}
+        {/* Start Time Picker Modal */}
+        <Modal
+          visible={showStartPicker}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowStartPicker(false)}
+        >
+          <View style={styles.timePickerOverlay}>
+            <View style={styles.timePickerContainer}>
+              <View style={styles.timePickerHeader}>
+                <Text style={styles.timePickerTitle}>Start Time</Text>
+              </View>
+              <DateTimePicker
+                value={tempStartTime}
+                mode="time"
+                is24Hour={true}
+                display="spinner"
+                onChange={(event, date) => {
+                  if (date) setTempStartTime(date);
+                }}
+                themeVariant="dark"
+                style={styles.timePicker}
+              />
+              <View style={styles.timePickerButtons}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.timePickerButton,
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => setShowStartPicker(false)}
+                >
+                  <Text style={styles.timePickerButtonTextCancel}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.timePickerButton,
+                    styles.timePickerButtonConfirm,
+                    { backgroundColor: selectedColor },
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => {
+                    setStartTime(tempStartTime);
+                    setShowStartPicker(false);
+                  }}
+                >
+                  <Text style={styles.timePickerButtonTextConfirm}>Confirm</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
-        {showEndPicker && (
-          <DateTimePicker
-            value={endTime || new Date()}
-            mode="time"
-            is24Hour={true}
-            display="spinner"
-            onChange={(event, date) => {
-              setShowEndPicker(false);
-              if (event.type === "set" && date) {
-                setEndTime(date);
-              }
-            }}
-            themeVariant="dark"
-          />
-        )}
+        {/* End Time Picker Modal */}
+        <Modal
+          visible={showEndPicker}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowEndPicker(false)}
+        >
+          <View style={styles.timePickerOverlay}>
+            <View style={styles.timePickerContainer}>
+              <View style={styles.timePickerHeader}>
+                <Text style={styles.timePickerTitle}>End Time</Text>
+              </View>
+              <DateTimePicker
+                value={tempEndTime}
+                mode="time"
+                is24Hour={true}
+                display="spinner"
+                onChange={(event, date) => {
+                  if (date) setTempEndTime(date);
+                }}
+                themeVariant="dark"
+                style={styles.timePicker}
+              />
+              <View style={styles.timePickerButtons}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.timePickerButton,
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => setShowEndPicker(false)}
+                >
+                  <Text style={styles.timePickerButtonTextCancel}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.timePickerButton,
+                    styles.timePickerButtonConfirm,
+                    { backgroundColor: selectedColor },
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => {
+                    setEndTime(tempEndTime);
+                    setShowEndPicker(false);
+                  }}
+                >
+                  <Text style={styles.timePickerButtonTextConfirm}>Confirm</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         {/* History Section (only in edit mode) */}
         {isEditMode && (
@@ -1258,5 +1338,58 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: fonts.medium,
     color: colors.danger[600],
+  },
+  timePickerOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  timePickerContainer: {
+    backgroundColor: colors.background.secondary,
+    borderRadius: 20,
+    width: "85%",
+    maxWidth: 340,
+    overflow: "hidden",
+  },
+  timePickerHeader: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.subtle,
+  },
+  timePickerTitle: {
+    fontSize: 18,
+    fontFamily: fonts.semiBold,
+    color: colors.text.primary,
+    textAlign: "center",
+  },
+  timePicker: {
+    height: 200,
+  },
+  timePickerButtons: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: colors.border.subtle,
+  },
+  timePickerButton: {
+    flex: 1,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  timePickerButtonConfirm: {
+    borderLeftWidth: 1,
+    borderLeftColor: colors.border.subtle,
+  },
+  timePickerButtonTextCancel: {
+    fontSize: 16,
+    fontFamily: fonts.medium,
+    color: colors.text.secondary,
+  },
+  timePickerButtonTextConfirm: {
+    fontSize: 16,
+    fontFamily: fonts.semiBold,
+    color: colors.base.white,
   },
 });
