@@ -30,9 +30,9 @@ export const HabitDayCard = ({
     habit.startTime && habit.endTime
       ? `${habit.startTime} - ${habit.endTime}`
       : habit.startTime
-      ? `From ${habit.startTime}`
+      ? habit.startTime
       : habit.endTime
-      ? `Until ${habit.endTime}`
+      ? habit.endTime
       : null;
 
   const hasStreak = habit.currentStreak > 0;
