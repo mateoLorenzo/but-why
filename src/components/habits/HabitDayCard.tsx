@@ -35,6 +35,8 @@ export const HabitDayCard = ({
       ? `Until ${habit.endTime}`
       : null;
 
+  const hasStreak = habit.currentStreak > 0;
+
   return (
     <Pressable
       style={({ pressed }) => [
@@ -44,6 +46,21 @@ export const HabitDayCard = ({
       ]}
       onPress={onPress}
     >
+      {/* Streak tag at top right */}
+      {hasStreak && (
+        <View
+          style={[
+            styles.streakTag,
+            { backgroundColor: `${habit.color}20` },
+          ]}
+        >
+          <Ionicons name="flame" size={10} color={habit.color} />
+          <Text style={[styles.streakText, { color: habit.color }]}>
+            {habit.currentStreak} day streak
+          </Text>
+        </View>
+      )}
+
       <View style={styles.content}>
         {/* Left side: Icon + Name */}
         <View style={styles.leftSection}>
@@ -63,14 +80,6 @@ export const HabitDayCard = ({
             <Text style={styles.habitName}>{habit.name}</Text>
             {scheduleText && (
               <Text style={styles.scheduleText}>{scheduleText}</Text>
-            )}
-            {habit.currentStreak > 0 && (
-              <View style={styles.streakRow}>
-                <Ionicons name="flame" size={12} color={habit.color} />
-                <Text style={[styles.streakText, { color: habit.color }]}>
-                  {habit.currentStreak} day streak
-                </Text>
-              </View>
             )}
           </View>
         </View>
@@ -152,13 +161,20 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     color: colors.text.tertiary,
   },
-  streakRow: {
+  streakTag: {
+    position: "absolute",
+    top: 0,
+    right: 54,
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 3,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
   },
   streakText: {
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: fonts.medium,
   },
   checkbox: {
