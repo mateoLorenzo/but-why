@@ -123,7 +123,17 @@ export const useHabits = (selectedDate?: string) => {
           currentStreak: streak,
         };
       })
-      .filter((habit) => habit.isScheduledForDay);
+      .filter((habit) => habit.isScheduledForDay)
+      .sort((a, b) => {
+        // Habits with startTime come first, sorted by time
+        // Habits without startTime go to the end
+        if (a.startTime && b.startTime) {
+          return a.startTime.localeCompare(b.startTime);
+        }
+        if (a.startTime && !b.startTime) return -1;
+        if (!a.startTime && b.startTime) return 1;
+        return 0;
+      });
   }, [habits, completions, currentDate]);
 
   // Add a new habit
