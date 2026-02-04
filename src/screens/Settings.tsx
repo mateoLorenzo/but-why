@@ -114,8 +114,9 @@ const Settings = () => {
       await Share.share({
         message:
           Platform.OS === "ios"
-            ? "Check out But Why - The best habit tracker app! " + APP_STORE_URL
-            : "Check out But Why - The best habit tracker app! " +
+            ? "Try But Why - The best app to track your habits! " +
+              APP_STORE_URL
+            : "Try But Why - The best app to track your habits! " +
               PLAY_STORE_URL,
       });
     } catch (error) {
@@ -145,17 +146,17 @@ const Settings = () => {
   const handleClearAllData = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert(
-      "Clear All Data",
+      "Delete All Data",
       "This will permanently delete all your habits and progress. This action cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Clear All",
+          text: "Delete All",
           style: "destructive",
           onPress: async () => {
             await habitsStorage.clearAll();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            Alert.alert("Done", "All data has been cleared.", [
+            Alert.alert("Done", "All data has been deleted.", [
               {
                 text: "OK",
                 onPress: () => router.back(),
@@ -248,8 +249,8 @@ const Settings = () => {
             <SettingItem
               icon="trash-outline"
               iconColor={colors.danger[600]}
-              label="Clear All Data"
-              subtitle="Delete all habits and progress"
+              label="Delete All Data"
+              subtitle="Remove all habits and progress"
               onPress={handleClearAllData}
               showChevron={false}
               danger

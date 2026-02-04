@@ -1,7 +1,7 @@
 import { DayStatus } from "@/src/types/habit";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const DAY_LABELS_SHORT_ES = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+const DAY_LABELS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export const formatDateKey = (date: Date): string => {
   return date.toISOString().split("T")[0]; // YYYY-MM-DD
@@ -265,7 +265,7 @@ export const formatMonthYear = (year: number, month: number): string => {
 
 /**
  * Get days centered on today for horizontal scrolling.
- * Returns days from the past and future with Spanish labels.
+ * Returns days from the past and future with English labels.
  */
 export const getScrollableDays = (
   daysBefore: number = 14,
@@ -290,7 +290,7 @@ export const getScrollableDays = (
 
     days.push({
       date: dateKey,
-      dayLabelShort: DAY_LABELS_SHORT_ES[date.getDay()],
+      dayLabelShort: DAY_LABELS_SHORT[date.getDay()],
       dayNumber: date.getDate(),
       isToday: dateKey === todayKey,
       isFuture: dateKey > todayKey,
@@ -301,27 +301,27 @@ export const getScrollableDays = (
 };
 
 /**
- * Format date to Spanish short format (e.g., "28 ene")
+ * Format date to English short format (e.g., "Jan 28")
  */
-export const formatDateShortES = (dateKey: string): string => {
+export const formatDateShort = (dateKey: string): string => {
   const date = new Date(dateKey + "T12:00:00");
   const day = date.getDate();
   const months = [
-    "ene",
-    "feb",
-    "mar",
-    "abr",
-    "may",
-    "jun",
-    "jul",
-    "ago",
-    "sep",
-    "oct",
-    "nov",
-    "dic",
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
   ];
   const month = months[date.getMonth()];
-  return `${day} ${month}`;
+  return `${month} ${day}`;
 };
 
 /**

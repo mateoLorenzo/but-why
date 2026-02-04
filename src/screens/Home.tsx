@@ -7,7 +7,7 @@ import { HabitForDay } from "@/src/types/habit";
 import { AppText as Text } from "@/src/ui/Text";
 import {
   formatDateKey,
-  formatDateShortES,
+  formatDateShort,
   isFutureDate,
 } from "@/src/utils/dates";
 import { Ionicons } from "@expo/vector-icons";
@@ -31,7 +31,7 @@ const Home = () => {
     useHabits(selectedDate);
 
   const isFuture = isFutureDate(selectedDate);
-  const headerDateLabel = formatDateShortES(selectedDate);
+  const headerDateLabel = formatDateShort(selectedDate);
 
   // Refresh habits when screen comes into focus (after creating a new habit)
   useFocusEffect(
@@ -79,12 +79,12 @@ const Home = () => {
         color={colors.text.tertiary}
       />
       <Text style={styles.emptyTitle}>
-        {isFuture ? "Sin hábitos programados" : "Sin hábitos para este día"}
+        {isFuture ? "No habits scheduled" : "No habits for this day"}
       </Text>
       <Text style={styles.emptySubtitle}>
         {isFuture
-          ? "No tienes hábitos para este día"
-          : "Toca + para crear un hábito"}
+          ? "You don't have habits for this day"
+          : "Tap + to create a habit"}
       </Text>
     </View>
   );

@@ -451,11 +451,10 @@ const CreateHabit = () => {
           <Text style={styles.sectionTitle}>Name</Text>
           <TextInput
             style={styles.textInput}
-            placeholder="e.g. Meditate, Exercise, Read..."
+            placeholder="e.g.: Meditate, Exercise, Read..."
             placeholderTextColor={colors.text.tertiary}
             value={name}
             onChangeText={setName}
-            // autoFocus
           />
         </View>
 
@@ -740,7 +739,9 @@ const CreateHabit = () => {
                     setShowStartPicker(false);
                   }}
                 >
-                  <Text style={styles.timePickerButtonTextConfirm}>Confirm</Text>
+                  <Text style={styles.timePickerButtonTextConfirm}>
+                    Confirm
+                  </Text>
                 </Pressable>
               </View>
             </View>
@@ -792,7 +793,9 @@ const CreateHabit = () => {
                     setShowEndPicker(false);
                   }}
                 >
-                  <Text style={styles.timePickerButtonTextConfirm}>Confirm</Text>
+                  <Text style={styles.timePickerButtonTextConfirm}>
+                    Confirm
+                  </Text>
                 </Pressable>
               </View>
             </View>

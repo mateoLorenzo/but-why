@@ -22,11 +22,16 @@ interface WeekDaySelectorProps {
 
 const DAYS_BEFORE = 30;
 const DAYS_AFTER = 5;
-const DAY_ITEM_WIDTH = 56;
+const VISIBLE_DAYS = 7;
 const GAP = 4;
 const PADDING_HORIZONTAL = 16;
 const SCROLL_DURATION = 350;
 const SCREEN_WIDTH = Dimensions.get("window").width;
+
+const DAY_ITEM_WIDTH = Math.floor(
+  (SCREEN_WIDTH - (VISIBLE_DAYS - 1) * GAP - 2 * PADDING_HORIZONTAL) /
+    VISIBLE_DAYS
+);
 
 // Position selected day as 2nd from right (1 day to the right)
 const DAYS_TO_RIGHT = 1;
@@ -115,6 +120,8 @@ export const WeekDaySelector = ({
         contentContainerStyle={styles.scrollContent}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
+        snapToInterval={DAY_ITEM_WIDTH + GAP}
+        decelerationRate="fast"
       >
         {days.map((day) => {
           const isSelected = day.date === selectedDate;

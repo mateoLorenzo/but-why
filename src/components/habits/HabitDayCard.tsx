@@ -42,6 +42,7 @@ export const HabitDayCard = ({
       style={({ pressed }) => [
         styles.container,
         { borderColor: `${habit.color}75` },
+        isFutureDay && styles.containerDisabled,
         pressed && styles.pressed,
       ]}
       onPress={onPress}
@@ -122,6 +123,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
     marginBottom: 10,
+  },
+  containerDisabled: {
+    backgroundColor: colors.background.primary,
+    opacity: 0.6,
   },
   pressed: {
     opacity: 0.7,
