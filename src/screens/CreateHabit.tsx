@@ -311,6 +311,15 @@ const CreateHabit = () => {
         ? customDays
         : FREQUENCY_OPTIONS.find((f) => f.id === selectedFrequency)?.days || [];
 
+    if (days.length === 0) {
+      Alert.alert(
+        "No days selected",
+        "Please select at least one day for your habit to appear.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
     if (isEditMode && existingHabit) {
       // Update existing habit
       const habits = await habitsStorage.getHabits();
