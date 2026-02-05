@@ -120,8 +120,6 @@ export const WeekDaySelector = ({
         contentContainerStyle={styles.scrollContent}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
-        snapToInterval={DAY_ITEM_WIDTH + GAP}
-        decelerationRate="fast"
       >
         {days.map((day) => {
           const isSelected = day.date === selectedDate;
