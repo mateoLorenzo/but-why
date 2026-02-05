@@ -30,7 +30,7 @@ const Home = () => {
   const insets = useSafeAreaInsets();
   const [selectedDate, setSelectedDate] = useState(formatDateKey(new Date()));
 
-  const { habitsForDay, isLoading, toggleCompletion, refresh } =
+  const { habitsForDay, isLoading, toggleCompletion, refresh, getProgressForDate } =
     useHabits(selectedDate);
 
   const isFuture = isFutureDate(selectedDate);
@@ -133,6 +133,7 @@ const Home = () => {
       <WeekDaySelector
         selectedDate={selectedDate}
         onSelectDate={setSelectedDate}
+        getProgressForDate={getProgressForDate}
       />
 
       {/* Habits List */}

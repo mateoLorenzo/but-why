@@ -183,6 +183,34 @@ export const useHabits = (selectedDate?: string) => {
     setCompletions(loadedCompletions);
   }, []);
 
+  // Calculate progress for a specific date (completed / total scheduled)
+  const getProgressForDate = useCallback(
+    (date: string): number => {
+      const dateObj = new Date(date + "T12:00:00");
+      const dayIndex = dateObj.getDay();
+      const isFuture = isFutureDate(date);
+
+      // Get habits scheduled for this day
+      const scheduledHabits = habits.filter((habit) =>
+        habit.days.includes(dayIndex)
+      );
+
+      if (scheduledHabits.length === 0) return 0;
+
+      // For future days, return 0
+      if (isFuture) return 0;
+
+      // Count completed habits
+      const completedCount = scheduledHabits.filter((habit) => {
+        const habitCompletions = completions[habit.id] || {};
+        return habitCompletions[date] || false;
+      }).length;
+
+      return completedCount / scheduledHabits.length;
+    },
+    [habits, completions]
+  );
+
   return {
     habits: habitsWithStatus,
     habitsForDay,
@@ -192,5 +220,6 @@ export const useHabits = (selectedDate?: string) => {
     toggleCompletion,
     refresh,
     selectedDate: currentDate,
+    getProgressForDate,
   };
 };

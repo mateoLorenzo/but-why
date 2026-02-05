@@ -7,18 +7,109 @@ import { Dimensions, Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   scrollTo,
+  useAnimatedProps,
   useAnimatedRef,
   useAnimatedScrollHandler,
   useDerivedValue,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import Svg, { Circle } from "react-native-svg";
 import { AppText as Text } from "../ui/Text";
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface WeekDaySelectorProps {
   selectedDate: string;
   onSelectDate: (date: string) => void;
+  getProgressForDate?: (date: string) => number;
 }
+
+// Progress circle dimensions
+const CIRCLE_SIZE = 32;
+const STROKE_WIDTH = 2.5;
+const RADIUS = (CIRCLE_SIZE - STROKE_WIDTH) / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+interface ProgressCircleProps {
+  progress: number;
+  isSelected: boolean;
+  isToday: boolean;
+  isFuture: boolean;
+}
+
+const PROGRESS_ANIMATION_DURATION = 400;
+
+const ProgressCircle = ({
+  progress,
+  isSelected,
+  isToday,
+  isFuture,
+}: ProgressCircleProps) => {
+  const animatedProgress = useSharedValue(progress);
+
+  // Animate progress changes
+  useEffect(() => {
+    animatedProgress.value = withTiming(progress, {
+      duration: PROGRESS_ANIMATION_DURATION,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [progress]);
+
+  const animatedProps = useAnimatedProps(() => ({
+    strokeDashoffset: CIRCUMFERENCE * (1 - animatedProgress.value),
+  }));
+
+  // Determine colors based on state
+  const baseColor = isFuture
+    ? colors.border.subtle
+    : isSelected && isToday
+    ? `${colors.accent.primary}50`
+    : isSelected
+    ? "rgba(255, 255, 255, 0.3)"
+    : isToday
+    ? `${colors.accent.primary}30`
+    : colors.border.subtle;
+
+  const progressColor =
+    isSelected && isToday
+      ? colors.accent.primary
+      : isSelected
+      ? colors.base.white
+      : colors.accent.primary;
+
+  return (
+    <Svg
+      width={CIRCLE_SIZE}
+      height={CIRCLE_SIZE}
+      style={{ transform: [{ scaleX: -1 }] }}
+    >
+      {/* Background circle */}
+      <Circle
+        cx={CIRCLE_SIZE / 2}
+        cy={CIRCLE_SIZE / 2}
+        r={RADIUS}
+        stroke={baseColor}
+        strokeWidth={STROKE_WIDTH}
+        fill="transparent"
+      />
+      {/* Progress circle */}
+      <AnimatedCircle
+        cx={CIRCLE_SIZE / 2}
+        cy={CIRCLE_SIZE / 2}
+        r={RADIUS}
+        stroke={progressColor}
+        strokeWidth={STROKE_WIDTH}
+        fill="transparent"
+        strokeDasharray={CIRCUMFERENCE}
+        animatedProps={animatedProps}
+        strokeLinecap="round"
+        rotation="-90"
+        origin={`${CIRCLE_SIZE / 2}, ${CIRCLE_SIZE / 2}`}
+      />
+    </Svg>
+  );
+};
 
 const DAYS_BEFORE = 30;
 const DAYS_AFTER = 5;
@@ -33,11 +124,15 @@ const DAY_ITEM_WIDTH = Math.floor(
 );
 
 // Calculate remaining space and distribute as padding to center days
-const TOTAL_DAYS_WIDTH = VISIBLE_DAYS * DAY_ITEM_WIDTH + (VISIBLE_DAYS - 1) * GAP;
-export const DAYS_HORIZONTAL_PADDING = Math.floor((SCREEN_WIDTH - TOTAL_DAYS_WIDTH) / 2);
+const TOTAL_DAYS_WIDTH =
+  VISIBLE_DAYS * DAY_ITEM_WIDTH + (VISIBLE_DAYS - 1) * GAP;
+export const DAYS_HORIZONTAL_PADDING = Math.floor(
+  (SCREEN_WIDTH - TOTAL_DAYS_WIDTH) / 2
+);
 
 // Header padding so icon centers align with day centers (44 = button width)
-export const HEADER_HORIZONTAL_PADDING = DAYS_HORIZONTAL_PADDING + DAY_ITEM_WIDTH / 2 - 22;
+export const HEADER_HORIZONTAL_PADDING =
+  DAYS_HORIZONTAL_PADDING + DAY_ITEM_WIDTH / 2 - 22;
 
 // Position selected day as 2nd from right (1 day to the right)
 const DAYS_TO_RIGHT = 1;
@@ -46,6 +141,7 @@ const SLOT_WIDTH = DAY_ITEM_WIDTH + GAP;
 export const WeekDaySelector = ({
   selectedDate,
   onSelectDate,
+  getProgressForDate,
 }: WeekDaySelectorProps) => {
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const scrollX = useSharedValue(0);
@@ -138,6 +234,9 @@ export const WeekDaySelector = ({
         {days.map((day) => {
           const isSelected = day.date === selectedDate;
           const isFutureStyle = day.isFuture && !isSelected;
+          const progress = getProgressForDate
+            ? getProgressForDate(day.date)
+            : 0;
 
           return (
             <Pressable
@@ -149,27 +248,39 @@ export const WeekDaySelector = ({
                 pressed && styles.dayItemPressed,
               ]}
             >
-              <Text
-                style={[
-                  styles.dayLabel,
-                  isSelected && styles.dayLabelSelected,
-                  day.isToday && !isSelected && styles.dayLabelToday,
-                  isFutureStyle && styles.dayLabelDisabled,
-                ]}
-              >
-                {day.dayLabelShort}
-              </Text>
+              <View style={styles.dayLabelContainer}>
+                {day.isToday && <View style={styles.todayIndicator} />}
+                <Text
+                  style={[
+                    styles.dayLabel,
+                    isSelected && styles.dayLabelSelected,
+                    day.isToday && !isSelected && styles.dayLabelToday,
+                    isFutureStyle && styles.dayLabelDisabled,
+                  ]}
+                >
+                  {day.dayLabelShort}
+                </Text>
+              </View>
 
-              <Text
-                style={[
-                  styles.dayNumber,
-                  isSelected && styles.dayNumberSelected,
-                  day.isToday && !isSelected && styles.dayNumberToday,
-                  isFutureStyle && styles.dayNumberDisabled,
-                ]}
-              >
-                {day.dayNumber}
-              </Text>
+              <View style={styles.dayNumberContainer}>
+                <ProgressCircle
+                  progress={progress}
+                  isSelected={isSelected}
+                  isToday={day.isToday}
+                  isFuture={day.isFuture}
+                />
+                <Text
+                  style={[
+                    styles.dayNumber,
+                    isSelected && styles.dayNumberSelected,
+                    day.isToday && !isSelected && styles.dayNumberToday,
+                    isFutureStyle && styles.dayNumberDisabled,
+                    progress === 1 && !isSelected && styles.dayNumberCompleted,
+                  ]}
+                >
+                  {day.dayNumber}
+                </Text>
+              </View>
             </Pressable>
           );
         })}
@@ -201,11 +312,24 @@ const styles = StyleSheet.create({
   dayItemPressed: {
     opacity: 0.7,
   },
+  dayLabelContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  todayIndicator: {
+    position: "absolute",
+    left: -8,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.accent.primary,
+  },
   dayLabel: {
     fontSize: 10,
     fontFamily: fonts.medium,
     color: colors.text.secondary,
-    marginBottom: 8,
   },
   dayLabelSelected: {
     color: colors.base.white,
@@ -217,7 +341,14 @@ const styles = StyleSheet.create({
   dayLabelDisabled: {
     color: colors.text.disabled,
   },
+  dayNumberContainer: {
+    width: CIRCLE_SIZE,
+    height: CIRCLE_SIZE,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   dayNumber: {
+    position: "absolute",
     fontSize: 13,
     fontFamily: fonts.regular,
     color: colors.text.secondary,
@@ -230,5 +361,8 @@ const styles = StyleSheet.create({
   },
   dayNumberDisabled: {
     color: colors.text.disabled,
+  },
+  dayNumberCompleted: {
+    color: colors.accent.primary,
   },
 });
