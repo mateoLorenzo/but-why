@@ -1,5 +1,8 @@
 import { HabitDayCard } from "@/src/components/habits/HabitDayCard";
-import { WeekDaySelector } from "@/src/components/WeekDaySelector";
+import {
+  WeekDaySelector,
+  HEADER_HORIZONTAL_PADDING,
+} from "@/src/components/WeekDaySelector";
 import { useHabits } from "@/src/hooks/useHabits";
 import colors from "@/src/theme/colors";
 import { fonts } from "@/src/theme/fonts";
@@ -164,15 +167,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: HEADER_HORIZONTAL_PADDING,
     paddingBottom: 4,
     backgroundColor: colors.background.primary,
   },
   headerButton: {
     width: 44,
     height: 44,
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
   },
   headerButtonPressed: {
     opacity: 0.6,

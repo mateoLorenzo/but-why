@@ -1,7 +1,6 @@
 import { DayStatus } from "@/src/types/habit";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const DAY_LABELS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export const formatDateKey = (date: Date): string => {
   return date.toISOString().split("T")[0]; // YYYY-MM-DD
@@ -290,7 +289,7 @@ export const getScrollableDays = (
 
     days.push({
       date: dateKey,
-      dayLabelShort: DAY_LABELS_SHORT[date.getDay()],
+      dayLabelShort: DAY_LABELS[date.getDay()],
       dayNumber: date.getDate(),
       isToday: dateKey === todayKey,
       isFuture: dateKey > todayKey,

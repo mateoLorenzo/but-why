@@ -24,17 +24,24 @@ const DAYS_BEFORE = 30;
 const DAYS_AFTER = 5;
 const VISIBLE_DAYS = 7;
 const GAP = 4;
-const PADDING_HORIZONTAL = 16;
 const SCROLL_DURATION = 350;
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
+// Calculate width so days + gaps fit in screen width
 const DAY_ITEM_WIDTH = Math.floor(
-  (SCREEN_WIDTH - (VISIBLE_DAYS - 1) * GAP - 2 * PADDING_HORIZONTAL) /
-    VISIBLE_DAYS
+  (SCREEN_WIDTH - (VISIBLE_DAYS - 1) * GAP) / VISIBLE_DAYS
 );
+
+// Calculate remaining space and distribute as padding to center days
+const TOTAL_DAYS_WIDTH = VISIBLE_DAYS * DAY_ITEM_WIDTH + (VISIBLE_DAYS - 1) * GAP;
+export const DAYS_HORIZONTAL_PADDING = Math.floor((SCREEN_WIDTH - TOTAL_DAYS_WIDTH) / 2);
+
+// Header padding so icon centers align with day centers (44 = button width)
+export const HEADER_HORIZONTAL_PADDING = DAYS_HORIZONTAL_PADDING + DAY_ITEM_WIDTH / 2 - 22;
 
 // Position selected day as 2nd from right (1 day to the right)
 const DAYS_TO_RIGHT = 1;
+const SLOT_WIDTH = DAY_ITEM_WIDTH + GAP;
 
 export const WeekDaySelector = ({
   selectedDate,
@@ -65,18 +72,22 @@ export const WeekDaySelector = ({
       const dayIndex = days.findIndex((d) => d.date === date);
       if (dayIndex === -1) return;
 
-      // Calculate day position
-      const dayPosition =
-        dayIndex * (DAY_ITEM_WIDTH + GAP) + PADDING_HORIZONTAL;
+      // Position where we want the selected day within the visible 6 days
+      // With DAYS_TO_RIGHT = 1, selected day will be at position 4 (penultimate)
+      const targetPosition = VISIBLE_DAYS - DAYS_TO_RIGHT - 1;
 
-      // Position the selected day with DAYS_TO_RIGHT days to its right
-      // targetX = dayPosition - (screenWidth - space for days on right - padding)
-      const spaceForRightDays =
-        (DAYS_TO_RIGHT + 1) * (DAY_ITEM_WIDTH + GAP) + PADDING_HORIZONTAL;
-      const targetX = Math.max(
+      // Calculate first visible day index
+      let firstVisibleIndex = dayIndex - targetPosition;
+
+      // Clamp to valid range to ensure exactly 6 days are visible
+      const maxFirstIndex = days.length - VISIBLE_DAYS;
+      firstVisibleIndex = Math.max(
         0,
-        dayPosition - SCREEN_WIDTH + spaceForRightDays
+        Math.min(firstVisibleIndex, maxFirstIndex)
       );
+
+      // Scroll position aligned to show exactly 6 complete days
+      const targetX = firstVisibleIndex * SLOT_WIDTH;
 
       if (animated) {
         isAnimating.value = true;
@@ -120,6 +131,9 @@ export const WeekDaySelector = ({
         contentContainerStyle={styles.scrollContent}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
+        bounces={true}
+        alwaysBounceHorizontal={true}
+        overScrollMode="always"
       >
         {days.map((day) => {
           const isSelected = day.date === selectedDate;
@@ -169,8 +183,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   scrollContent: {
-    paddingHorizontal: 16,
     gap: GAP,
+    paddingHorizontal: DAYS_HORIZONTAL_PADDING,
   },
   dayItem: {
     alignItems: "center",
@@ -188,7 +202,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   dayLabel: {
-    fontSize: 13,
+    fontSize: 10,
     fontFamily: fonts.medium,
     color: colors.text.secondary,
     marginBottom: 8,
