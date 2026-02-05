@@ -69,20 +69,13 @@ const ProgressCircle = ({
   // Determine colors based on state
   const baseColor = isFuture
     ? colors.border.subtle
-    : isSelected && isToday
-    ? `${colors.accent.primary}50`
     : isSelected
-    ? "rgba(255, 255, 255, 0.3)"
-    : isToday
-    ? `${colors.accent.primary}30`
-    : colors.border.subtle;
+      ? `${colors.accent.primary}50`
+      : isToday
+        ? `${colors.accent.primary}30`
+        : colors.border.subtle;
 
-  const progressColor =
-    isSelected && isToday
-      ? colors.accent.primary
-      : isSelected
-      ? colors.base.white
-      : colors.accent.primary;
+  const progressColor = colors.accent.primary;
 
   return (
     <Svg
