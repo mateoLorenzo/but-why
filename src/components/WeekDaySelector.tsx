@@ -1,8 +1,9 @@
 import colors from "@/src/theme/colors";
 import { fonts } from "@/src/theme/fonts";
 import { getScrollableDays } from "@/src/utils/dates";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Dimensions, Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
@@ -10,14 +11,19 @@ import Animated, {
   useAnimatedProps,
   useAnimatedRef,
   useAnimatedScrollHandler,
+  useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
+  withDelay,
+  withSequence,
   withTiming,
 } from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
 import { AppText as Text } from "../ui/Text";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const AnimatedText = Animated.createAnimatedComponent(Text);
+const AnimatedIonicons = Animated.createAnimatedComponent(Ionicons);
 
 interface WeekDaySelectorProps {
   selectedDate: string;
@@ -108,6 +114,121 @@ const ProgressCircle = ({
         origin={`${CIRCLE_SIZE / 2}, ${CIRCLE_SIZE / 2}`}
       />
     </Svg>
+  );
+};
+
+// Animation constants for completion celebration
+const COMPLETION_ANIMATION_DURATION = 300;
+const COMPLETION_CHECK_DISPLAY_TIME = 1500;
+const SLIDE_DISTANCE = 10;
+
+interface AnimatedDayNumberProps {
+  dayNumber: number;
+  progress: number;
+  isSelected: boolean;
+  isToday: boolean;
+  isFuture: boolean;
+  textStyle: any[];
+}
+
+const AnimatedDayNumber = ({
+  dayNumber,
+  progress,
+  isSelected,
+  isToday,
+  isFuture,
+  textStyle,
+}: AnimatedDayNumberProps) => {
+  const prevProgress = useRef(progress);
+  const showCheck = useSharedValue(0); // 0 = show number, 1 = show check
+  const numberOpacity = useSharedValue(1);
+  const numberTranslateY = useSharedValue(0);
+  const checkOpacity = useSharedValue(0);
+  const checkTranslateY = useSharedValue(-SLIDE_DISTANCE);
+
+  useEffect(() => {
+    const wasCompleted = prevProgress.current === 1;
+    const isNowCompleted = progress === 1;
+
+    // Only animate when transitioning TO 100% (not when loading or already at 100%)
+    if (!wasCompleted && isNowCompleted) {
+      const animConfig = {
+        duration: COMPLETION_ANIMATION_DURATION,
+        easing: Easing.out(Easing.cubic),
+      };
+
+      // Phase 1: Number exits down, Check enters from top
+      // Phase 2 (after display time): Check exits down, Number enters from top
+
+      // Number: fade out -> wait for check to exit -> fade in
+      numberOpacity.value = withSequence(
+        withTiming(0, animConfig),
+        withDelay(
+          COMPLETION_CHECK_DISPLAY_TIME + COMPLETION_ANIMATION_DURATION,
+          withTiming(1, animConfig)
+        )
+      );
+
+      // Number Y: slide down -> wait for check to exit -> reset to top -> slide to center
+      numberTranslateY.value = withSequence(
+        withTiming(SLIDE_DISTANCE, animConfig),
+        withDelay(
+          COMPLETION_CHECK_DISPLAY_TIME + COMPLETION_ANIMATION_DURATION,
+          withTiming(-SLIDE_DISTANCE, { duration: 0 })
+        ),
+        withTiming(0, animConfig)
+      );
+
+      // Check: wait -> fade in -> wait -> fade out
+      checkOpacity.value = withSequence(
+        withDelay(COMPLETION_ANIMATION_DURATION / 2, withTiming(1, animConfig)),
+        withDelay(COMPLETION_CHECK_DISPLAY_TIME, withTiming(0, animConfig))
+      );
+
+      // Check Y: reset to top -> slide to center -> wait -> slide down
+      checkTranslateY.value = withSequence(
+        withTiming(-SLIDE_DISTANCE, { duration: 0 }),
+        withDelay(COMPLETION_ANIMATION_DURATION / 2, withTiming(0, animConfig)),
+        withDelay(
+          COMPLETION_CHECK_DISPLAY_TIME,
+          withTiming(SLIDE_DISTANCE, animConfig)
+        )
+      );
+    }
+
+    prevProgress.current = progress;
+  }, [progress]);
+
+  const numberAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: numberOpacity.value,
+    transform: [{ translateY: numberTranslateY.value }],
+  }));
+
+  const checkAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: checkOpacity.value,
+    transform: [{ translateY: checkTranslateY.value }],
+  }));
+
+  const checkColor = isSelected
+    ? colors.base.white
+    : isToday
+    ? colors.accent.primary
+    : colors.accent.primary;
+
+  return (
+    <>
+      <AnimatedText
+        style={[...textStyle, styles.dayNumberAnimated, numberAnimatedStyle]}
+      >
+        {dayNumber}
+      </AnimatedText>
+      <AnimatedIonicons
+        name="checkmark"
+        size={16}
+        color={checkColor}
+        style={[styles.checkIcon, checkAnimatedStyle]}
+      />
+    </>
   );
 };
 
@@ -269,17 +390,20 @@ export const WeekDaySelector = ({
                   isToday={day.isToday}
                   isFuture={day.isFuture}
                 />
-                <Text
-                  style={[
+                <AnimatedDayNumber
+                  dayNumber={day.dayNumber}
+                  progress={progress}
+                  isSelected={isSelected}
+                  isToday={day.isToday}
+                  isFuture={day.isFuture}
+                  textStyle={[
                     styles.dayNumber,
                     isSelected && styles.dayNumberSelected,
                     day.isToday && !isSelected && styles.dayNumberToday,
                     isFutureStyle && styles.dayNumberDisabled,
                     progress === 1 && !isSelected && styles.dayNumberCompleted,
                   ]}
-                >
-                  {day.dayNumber}
-                </Text>
+                />
               </View>
             </Pressable>
           );
@@ -348,10 +472,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   dayNumber: {
-    position: "absolute",
     fontSize: 13,
     fontFamily: fonts.regular,
     color: colors.text.secondary,
+  },
+  dayNumberAnimated: {
+    position: "absolute",
+  },
+  checkIcon: {
+    position: "absolute",
   },
   dayNumberSelected: {
     color: colors.base.white,
