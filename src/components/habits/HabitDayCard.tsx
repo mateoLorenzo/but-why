@@ -1,3 +1,4 @@
+import { AnimatedStreakTag } from "@/src/components/habits/AnimatedStreakTag";
 import colors from "@/src/theme/colors";
 import { fonts } from "@/src/theme/fonts";
 import { HabitForDay } from "@/src/types/habit";
@@ -55,10 +56,10 @@ export const HabitDayCard = ({
             { backgroundColor: `${habit.color}20` },
           ]}
         >
-          <Ionicons name="flame" size={10} color={habit.color} />
-          <Text style={[styles.streakText, { color: habit.color }]}>
-            {habit.currentStreak} day streak
-          </Text>
+          <AnimatedStreakTag
+            streak={habit.currentStreak}
+            color={habit.color}
+          />
         </View>
       )}
 
@@ -170,17 +171,11 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     right: 54,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderBottomLeftRadius: 8,
     borderBottomRightRadius: 8,
-  },
-  streakText: {
-    fontSize: 10,
-    fontFamily: fonts.medium,
+    overflow: "hidden",
   },
   checkbox: {
     width: 28,

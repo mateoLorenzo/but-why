@@ -1,3 +1,4 @@
+import { AnimatedNumber } from "@/src/components/AnimatedNumber";
 import colors from "@/src/theme/colors";
 import { fonts } from "@/src/theme/fonts";
 import { HabitWithWeekStatus } from "@/src/types/habit";
@@ -84,10 +85,16 @@ export const HabitCard = ({ habit, onToggleDay, onPress }: HabitCardProps) => {
               ]}
             >
               <Ionicons name="flame" size={14} color={habit.color} />
-              <Text style={[styles.streakText, { color: habit.color }]}>
-                {habit.currentStreak}{" "}
-                {habit.currentStreak === 1 ? "day" : "days"}
-              </Text>
+              <View style={styles.streakTextContainer}>
+                <AnimatedNumber
+                  value={habit.currentStreak}
+                  style={[styles.streakText, { color: habit.color }]}
+                />
+                <Text style={[styles.streakText, { color: habit.color }]}>
+                  {" "}
+                  {habit.currentStreak === 1 ? "day" : "days"}
+                </Text>
+              </View>
             </View>
           </View>
         )}
@@ -160,6 +167,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
+  },
+  streakTextContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   streakText: {
     fontSize: 12,
