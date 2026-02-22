@@ -1,3 +1,4 @@
+import { ErrorBoundary } from "@/src/components/ErrorBoundary";
 import colors from "@/src/theme/colors";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
@@ -23,28 +24,30 @@ export default function RootLayout() {
     return null;
   }
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: colors.background.primary },
-      }}
-    >
-      <Stack.Screen name="index" />
-      <Stack.Screen name="home" />
-      <Stack.Screen
-        name="create-habit"
-        options={{
-          presentation: "modal",
-          animation: "slide_from_bottom",
+    <ErrorBoundary>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.background.primary },
         }}
-      />
-      <Stack.Screen
-        name="settings"
-        options={{
-          presentation: "modal",
-          animation: "slide_from_bottom",
-        }}
-      />
-    </Stack>
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="home" />
+        <Stack.Screen
+          name="create-habit"
+          options={{
+            presentation: "modal",
+            animation: "slide_from_bottom",
+          }}
+        />
+        <Stack.Screen
+          name="settings"
+          options={{
+            presentation: "modal",
+            animation: "slide_from_bottom",
+          }}
+        />
+      </Stack>
+    </ErrorBoundary>
   );
 }
