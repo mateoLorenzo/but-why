@@ -484,6 +484,6 @@ const styles = StyleSheet.create({
     color: colors.text.disabled,
   },
   dayNumberCompleted: {
-    color: colors.accent.primary,
+    color: colors.text.secondary,
   },
 });
