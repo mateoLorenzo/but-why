@@ -11,6 +11,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  Dimensions,
   FlatList,
   Modal,
   Platform,
@@ -21,6 +22,22 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+// History grid layout
+const HISTORY_COLUMNS = 6;
+const HISTORY_GAP = 8;
+const HISTORY_PADDING = 12;
+const SCROLL_PADDING = 20;
+const HISTORY_BORDER = 1;
+const HISTORY_CONTAINER_INNER_WIDTH =
+  Dimensions.get("window").width -
+  SCROLL_PADDING * 2 -
+  HISTORY_PADDING * 2 -
+  HISTORY_BORDER * 2;
+const HISTORY_DAY_WIDTH = Math.floor(
+  (HISTORY_CONTAINER_INNER_WIDTH - (HISTORY_COLUMNS - 1) * HISTORY_GAP) /
+    HISTORY_COLUMNS
+);
 
 const HABIT_COLORS = [
   "#3B82F6",
@@ -1282,10 +1299,10 @@ const styles = StyleSheet.create({
   historyContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: HISTORY_GAP,
     backgroundColor: colors.background.secondary,
     borderRadius: 12,
-    padding: 12,
+    padding: HISTORY_PADDING,
     borderWidth: 1,
     borderColor: colors.border.subtle,
     minHeight: 80,
@@ -1299,7 +1316,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   historyDay: {
-    width: 44,
+    width: HISTORY_DAY_WIDTH,
     alignItems: "center",
     paddingVertical: 8,
     borderRadius: 10,

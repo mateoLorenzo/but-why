@@ -69,6 +69,7 @@ const Home = () => {
         onToggle={() => handleToggleHabit(item.id)}
         onPress={() => handleEditHabit(item.id)}
         isFutureDay={isFuture}
+        selectedDate={selectedDate}
       />
     ),
     [handleToggleHabit, isFuture]

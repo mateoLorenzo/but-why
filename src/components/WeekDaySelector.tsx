@@ -23,7 +23,6 @@ import { AppText as Text } from "../ui/Text";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedText = Animated.createAnimatedComponent(Text);
-const AnimatedIonicons = Animated.createAnimatedComponent(Ionicons);
 
 interface WeekDaySelectorProps {
   selectedDate: string;
@@ -215,12 +214,9 @@ const AnimatedDayNumber = ({
       >
         {dayNumber}
       </AnimatedText>
-      <AnimatedIonicons
-        name="checkmark"
-        size={16}
-        color={checkColor}
-        style={[styles.checkIcon, checkAnimatedStyle]}
-      />
+      <Animated.View style={[styles.checkIcon, checkAnimatedStyle]}>
+        <Ionicons name="checkmark" size={16} color={checkColor} />
+      </Animated.View>
     </>
   );
 };

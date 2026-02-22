@@ -33,23 +33,26 @@ export const getLastSevenDays = (): Omit<DayStatus, "completed">[] => {
  */
 export const getLastNMatchingDays = (
   count: number,
-  allowedDays: number[]
+  allowedDays: number[],
+  referenceDate?: string
 ): Omit<DayStatus, "completed">[] => {
   const days: Omit<DayStatus, "completed">[] = [];
-  const today = new Date();
-  const todayKey = formatDateKey(today);
+  const refDate = referenceDate
+    ? new Date(referenceDate + "T12:00:00")
+    : new Date();
+  const refDateKey = referenceDate || formatDateKey(new Date());
 
   let daysBack = 0;
   while (days.length < count) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - daysBack);
+    const date = new Date(refDate);
+    date.setDate(refDate.getDate() - daysBack);
 
     if (allowedDays.includes(date.getDay())) {
       days.unshift({
         date: formatDateKey(date),
         dayLabel: DAY_LABELS[date.getDay()],
         dayIndex: date.getDay(),
-        isToday: formatDateKey(date) === todayKey,
+        isToday: formatDateKey(date) === refDateKey,
         isFuture: false,
       });
     }

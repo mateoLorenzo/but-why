@@ -97,8 +97,10 @@ export const useHabits = (selectedDate?: string) => {
           ? false
           : habitCompletions[currentDate] || false;
 
-        // Calculate streak
-        const pastDays = getLastNMatchingDays(60, habit.days);
+        // Calculate streak as of the selected date
+        const pastDays = isFuture
+          ? []
+          : getLastNMatchingDays(60, habit.days, currentDate);
         let streak = 0;
 
         for (let i = pastDays.length - 1; i >= 0; i--) {
@@ -106,6 +108,7 @@ export const useHabits = (selectedDate?: string) => {
           const isCompleted = habitCompletions[day.date] || false;
 
           if (day.isToday) {
+            // Reference date: add if completed, don't break if not
             if (isCompleted) streak++;
           } else {
             if (isCompleted) {

@@ -13,6 +13,7 @@ interface HabitDayCardProps {
   onToggle: () => void;
   onPress: () => void;
   isFutureDay: boolean;
+  selectedDate: string;
 }
 
 export const HabitDayCard = ({
@@ -20,6 +21,7 @@ export const HabitDayCard = ({
   onToggle,
   onPress,
   isFutureDay,
+  selectedDate,
 }: HabitDayCardProps) => {
   const handleToggle = () => {
     if (isFutureDay) return;
@@ -59,6 +61,7 @@ export const HabitDayCard = ({
           <AnimatedStreakTag
             streak={habit.currentStreak}
             color={habit.color}
+            selectedDate={selectedDate}
           />
         </View>
       )}
