@@ -419,6 +419,8 @@ const CreateHabit = () => {
             styles.headerButton,
             pressed && styles.pressed,
           ]}
+          accessibilityLabel="Cancel"
+          accessibilityRole="button"
         >
           <Text style={styles.headerButtonText}>Cancel</Text>
         </Pressable>
@@ -433,6 +435,9 @@ const CreateHabit = () => {
             pressed && isFormValid && styles.pressed,
           ]}
           disabled={!isFormValid}
+          accessibilityLabel={isEditMode ? "Save habit" : "Create habit"}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !isFormValid }}
         >
           <Text
             style={[
@@ -481,6 +486,7 @@ const CreateHabit = () => {
             placeholderTextColor={colors.text.tertiary}
             value={name}
             onChangeText={setName}
+            accessibilityLabel="Habit name"
           />
         </View>
 
@@ -502,6 +508,9 @@ const CreateHabit = () => {
                     pressed && styles.pressed,
                   ]}
                   onPress={() => setSelectedIcon(icon)}
+                  accessibilityLabel={`Select ${icon.replace("-outline", "")} icon`}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isSelected }}
                 >
                   <Ionicons
                     name={icon as keyof typeof Ionicons.glyphMap}
@@ -526,6 +535,8 @@ const CreateHabit = () => {
                 pressed && styles.pressed,
               ]}
               onPress={() => setIsIconPickerOpen(true)}
+              accessibilityLabel="Show more icons"
+              accessibilityRole="button"
             >
               {PRESET_ICONS.includes(
                 selectedIcon as (typeof PRESET_ICONS)[number]
@@ -560,6 +571,9 @@ const CreateHabit = () => {
                   pressed && styles.pressed,
                 ]}
                 onPress={() => setSelectedColor(color)}
+                accessibilityLabel={`Select color ${index + 1}`}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: selectedColor === color }}
               >
                 {selectedColor === color && (
                   <Ionicons
@@ -590,6 +604,9 @@ const CreateHabit = () => {
                   index !== 1 && { flex: 1 },
                 ]}
                 onPress={() => setSelectedFrequency(option.id)}
+                accessibilityLabel={option.label}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: selectedFrequency === option.id }}
               >
                 <Text
                   style={[
@@ -618,6 +635,9 @@ const CreateHabit = () => {
                     pressed && styles.pressed,
                   ]}
                   onPress={() => toggleCustomDay(index)}
+                  accessibilityLabel={label}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: customDays.includes(index) }}
                 >
                   <Text
                     style={[
@@ -651,6 +671,8 @@ const CreateHabit = () => {
                 setTempStartTime(startTime || new Date());
                 setShowStartPicker(true);
               }}
+              accessibilityLabel="Set start time"
+              accessibilityRole="button"
             >
               <Ionicons
                 name="time-outline"
@@ -682,6 +704,8 @@ const CreateHabit = () => {
                 setTempEndTime(endTime || new Date());
                 setShowEndPicker(true);
               }}
+              accessibilityLabel="Set end time"
+              accessibilityRole="button"
             >
               <Ionicons
                 name="time-outline"
@@ -709,6 +733,8 @@ const CreateHabit = () => {
                 setStartTime(null);
                 setEndTime(null);
               }}
+              accessibilityLabel="Clear schedule"
+              accessibilityRole="button"
             >
               <Ionicons
                 name="close-circle-outline"
@@ -750,6 +776,8 @@ const CreateHabit = () => {
                     pressed && styles.pressed,
                   ]}
                   onPress={() => setShowStartPicker(false)}
+                  accessibilityLabel="Cancel"
+                  accessibilityRole="button"
                 >
                   <Text style={styles.timePickerButtonTextCancel}>Cancel</Text>
                 </Pressable>
@@ -764,6 +792,8 @@ const CreateHabit = () => {
                     setStartTime(tempStartTime);
                     setShowStartPicker(false);
                   }}
+                  accessibilityLabel="Confirm start time"
+                  accessibilityRole="button"
                 >
                   <Text style={styles.timePickerButtonTextConfirm}>
                     Confirm
@@ -804,6 +834,8 @@ const CreateHabit = () => {
                     pressed && styles.pressed,
                   ]}
                   onPress={() => setShowEndPicker(false)}
+                  accessibilityLabel="Cancel"
+                  accessibilityRole="button"
                 >
                   <Text style={styles.timePickerButtonTextCancel}>Cancel</Text>
                 </Pressable>
@@ -818,6 +850,8 @@ const CreateHabit = () => {
                     setEndTime(tempEndTime);
                     setShowEndPicker(false);
                   }}
+                  accessibilityLabel="Confirm end time"
+                  accessibilityRole="button"
                 >
                   <Text style={styles.timePickerButtonTextConfirm}>
                     Confirm
@@ -841,6 +875,8 @@ const CreateHabit = () => {
                   styles.monthNavButton,
                   pressed && styles.pressed,
                 ]}
+                accessibilityLabel="Previous month"
+                accessibilityRole="button"
               >
                 <Ionicons
                   name="chevron-back"
@@ -861,6 +897,9 @@ const CreateHabit = () => {
                   pressed && canGoToNextMonth && styles.pressed,
                 ]}
                 disabled={!canGoToNextMonth}
+                accessibilityLabel="Next month"
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !canGoToNextMonth }}
               >
                 <Ionicons
                   name="chevron-forward"
@@ -891,6 +930,9 @@ const CreateHabit = () => {
                         pressed && styles.pressed,
                       ]}
                       onPress={() => handleToggleHistoryDay(day.date)}
+                      accessibilityLabel={`${day.dayLabel} ${new Date(day.date + "T12:00:00").getDate()}`}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isCompleted }}
                     >
                       <Text
                         style={[
@@ -944,6 +986,8 @@ const CreateHabit = () => {
               styles.deleteButton,
               pressed && styles.deleteButtonPressed,
             ]}
+            accessibilityLabel="Delete habit"
+            accessibilityRole="button"
           >
             <Ionicons
               name="trash-outline"
@@ -971,6 +1015,8 @@ const CreateHabit = () => {
                 styles.modalCloseButton,
                 pressed && styles.pressed,
               ]}
+              accessibilityLabel="Close"
+              accessibilityRole="button"
             >
               <Ionicons name="close" size={24} color={colors.text.primary} />
             </Pressable>
@@ -999,6 +1045,9 @@ const CreateHabit = () => {
                     setSelectedIcon(icon);
                     setIsIconPickerOpen(false);
                   }}
+                  accessibilityLabel={`Select ${icon.replace("-outline", "")} icon`}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isSelected }}
                 >
                   <Ionicons
                     name={icon as keyof typeof Ionicons.glyphMap}

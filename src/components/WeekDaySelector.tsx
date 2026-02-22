@@ -357,6 +357,9 @@ export const WeekDaySelector = ({
                 isSelected && styles.dayItemSelected,
                 pressed && styles.dayItemPressed,
               ]}
+              accessibilityLabel={`${day.dayLabelShort} ${day.dayNumber}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
             >
               <View style={styles.dayLabelContainer}>
                 {day.isToday && <View style={styles.todayIndicator} />}

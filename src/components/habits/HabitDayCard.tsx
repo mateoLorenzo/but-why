@@ -49,6 +49,8 @@ export const HabitDayCard = ({
         pressed && styles.pressed,
       ]}
       onPress={onPress}
+      accessibilityLabel={habit.name}
+      accessibilityRole="button"
     >
       {/* Streak tag at top right */}
       {hasStreak && (
@@ -103,6 +105,12 @@ export const HabitDayCard = ({
             isFutureDay && styles.checkboxDisabled,
             pressed && !isFutureDay && styles.checkboxPressed,
           ]}
+          accessibilityLabel={`Complete ${habit.name}`}
+          accessibilityRole="checkbox"
+          accessibilityState={{
+            checked: habit.isCompletedForDay,
+            disabled: isFutureDay,
+          }}
         >
           {habit.isCompletedForDay && (
             <Ionicons name="checkmark" size={18} color={colors.base.white} />

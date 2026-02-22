@@ -51,6 +51,8 @@ const SettingItem = ({
       styles.settingItem,
       pressed && styles.settingItemPressed,
     ]}
+    accessibilityLabel={label}
+    accessibilityRole="button"
   >
     <View
       style={[
@@ -183,6 +185,8 @@ const Settings = () => {
             styles.headerButton,
             pressed && styles.pressed,
           ]}
+          accessibilityLabel="Close settings"
+          accessibilityRole="button"
         >
           <Text style={styles.headerButtonText}>Done</Text>
         </Pressable>

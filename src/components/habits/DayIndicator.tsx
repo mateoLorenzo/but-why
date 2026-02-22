@@ -73,6 +73,9 @@ export const DayIndicator = ({
           isFuture && styles.circleFuture,
           pressed && !isFuture && styles.circlePressed,
         ]}
+        accessibilityLabel={dayLabel}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: completed, disabled: isFuture }}
       >
         {completed && (
           <Ionicons name="checkmark" size={14} color={colors.base.white} />

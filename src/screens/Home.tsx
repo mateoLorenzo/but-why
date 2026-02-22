@@ -111,6 +111,8 @@ const Home = () => {
             pressed && styles.headerButtonPressed,
           ]}
           onPress={handleOpenSettings}
+          accessibilityLabel="Open settings"
+          accessibilityRole="button"
         >
           <Ionicons name="menu" size={26} color={colors.text.primary} />
         </Pressable>
@@ -125,6 +127,8 @@ const Home = () => {
             pressed && styles.headerButtonPressed,
           ]}
           onPress={handleAddHabit}
+          accessibilityLabel="Create new habit"
+          accessibilityRole="button"
         >
           <Ionicons name="add" size={28} color={colors.text.primary} />
         </Pressable>

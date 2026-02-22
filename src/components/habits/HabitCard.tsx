@@ -32,6 +32,8 @@ export const HabitCard = ({ habit, onToggleDay, onPress }: HabitCardProps) => {
         pressed && styles.pressed,
       ]}
       onPress={onPress}
+      accessibilityLabel={habit.name}
+      accessibilityRole="button"
     >
       <View style={styles.content}>
         <View style={styles.header}>
