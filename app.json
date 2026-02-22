@@ -24,7 +24,8 @@
       "package": "com.mateolorenzo.butwhy",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundColor": "#0A0A0F",
+        "backgroundColor": "#FFFFFF",
+        "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       }
     },
