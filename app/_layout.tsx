@@ -1,8 +1,19 @@
 import { ErrorBoundary } from "@/src/components/ErrorBoundary";
+import { NotificationProvider } from "@/src/context/context/NotificationContext";
 import colors from "@/src/theme/colors";
 import { useFonts } from "expo-font";
+import * as Notifications from "expo-notifications";
 import { SplashScreen, Stack } from "expo-router";
 import { useEffect } from "react";
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,29 +36,31 @@ export default function RootLayout() {
   }
   return (
     <ErrorBoundary>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.background.primary },
-        }}
-      >
-        <Stack.Screen name="index" />
-        <Stack.Screen name="home" />
-        <Stack.Screen
-          name="create-habit"
-          options={{
-            presentation: "modal",
-            animation: "slide_from_bottom",
+      <NotificationProvider>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.background.primary },
           }}
-        />
-        <Stack.Screen
-          name="settings"
-          options={{
-            presentation: "modal",
-            animation: "slide_from_bottom",
-          }}
-        />
-      </Stack>
+        >
+          <Stack.Screen name="index" />
+          <Stack.Screen name="home" />
+          <Stack.Screen
+            name="create-habit"
+            options={{
+              presentation: "modal",
+              animation: "slide_from_bottom",
+            }}
+          />
+          <Stack.Screen
+            name="settings"
+            options={{
+              presentation: "modal",
+              animation: "slide_from_bottom",
+            }}
+          />
+        </Stack>
+      </NotificationProvider>
     </ErrorBoundary>
   );
 }

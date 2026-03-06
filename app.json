@@ -8,7 +8,7 @@
     "icon": "./assets/images/icon-2.png",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/images/icon-2.png",
+      "image": "./assets/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#FFFFFF"
     },
@@ -27,7 +27,8 @@
         "backgroundColor": "#FFFFFF",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      }
+      },
+      "googleServicesFile": "./google-services.json"
     },
     "extra": {
       "eas": {
