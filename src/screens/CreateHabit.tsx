@@ -746,121 +746,159 @@ const CreateHabit = () => {
           )}
         </View>
 
-        {/* Start Time Picker Modal */}
-        <Modal
-          visible={showStartPicker}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setShowStartPicker(false)}
-        >
-          <View style={styles.timePickerOverlay}>
-            <View style={styles.timePickerContainer}>
-              <View style={styles.timePickerHeader}>
-                <Text style={styles.timePickerTitle}>Start Time</Text>
-              </View>
-              <DateTimePicker
-                value={tempStartTime}
-                mode="time"
-                is24Hour={true}
-                display="spinner"
-                onChange={(event, date) => {
-                  if (date) setTempStartTime(date);
-                }}
-                themeVariant="dark"
-                style={styles.timePicker}
-              />
-              <View style={styles.timePickerButtons}>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.timePickerButton,
-                    pressed && styles.pressed,
-                  ]}
-                  onPress={() => setShowStartPicker(false)}
-                  accessibilityLabel="Cancel"
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.timePickerButtonTextCancel}>Cancel</Text>
-                </Pressable>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.timePickerButton,
-                    styles.timePickerButtonConfirm,
-                    { backgroundColor: selectedColor },
-                    pressed && styles.pressed,
-                  ]}
-                  onPress={() => {
-                    setStartTime(tempStartTime);
-                    setShowStartPicker(false);
+        {/* Start Time Picker */}
+        {Platform.OS === "ios" ? (
+          <Modal
+            visible={showStartPicker}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowStartPicker(false)}
+          >
+            <View style={styles.timePickerOverlay}>
+              <View style={styles.timePickerContainer}>
+                <View style={styles.timePickerHeader}>
+                  <Text style={styles.timePickerTitle}>Start Time</Text>
+                </View>
+                <DateTimePicker
+                  value={tempStartTime}
+                  mode="time"
+                  is24Hour={true}
+                  display="spinner"
+                  onChange={(event, date) => {
+                    if (date) setTempStartTime(date);
                   }}
-                  accessibilityLabel="Confirm start time"
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.timePickerButtonTextConfirm}>
-                    Confirm
-                  </Text>
-                </Pressable>
+                  themeVariant="dark"
+                  style={styles.timePicker}
+                />
+                <View style={styles.timePickerButtons}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.timePickerButton,
+                      pressed && styles.pressed,
+                    ]}
+                    onPress={() => setShowStartPicker(false)}
+                    accessibilityLabel="Cancel"
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.timePickerButtonTextCancel}>
+                      Cancel
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.timePickerButton,
+                      styles.timePickerButtonConfirm,
+                      { backgroundColor: selectedColor },
+                      pressed && styles.pressed,
+                    ]}
+                    onPress={() => {
+                      setStartTime(tempStartTime);
+                      setShowStartPicker(false);
+                    }}
+                    accessibilityLabel="Confirm start time"
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.timePickerButtonTextConfirm}>
+                      Confirm
+                    </Text>
+                  </Pressable>
+                </View>
               </View>
             </View>
-          </View>
-        </Modal>
+          </Modal>
+        ) : (
+          showStartPicker && (
+            <DateTimePicker
+              value={tempStartTime}
+              mode="time"
+              is24Hour={true}
+              display="default"
+              onChange={(event, date) => {
+                setShowStartPicker(false);
+                if (event.type === "set" && date) {
+                  setStartTime(date);
+                }
+              }}
+            />
+          )
+        )}
 
-        {/* End Time Picker Modal */}
-        <Modal
-          visible={showEndPicker}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setShowEndPicker(false)}
-        >
-          <View style={styles.timePickerOverlay}>
-            <View style={styles.timePickerContainer}>
-              <View style={styles.timePickerHeader}>
-                <Text style={styles.timePickerTitle}>End Time</Text>
-              </View>
-              <DateTimePicker
-                value={tempEndTime}
-                mode="time"
-                is24Hour={true}
-                display="spinner"
-                onChange={(event, date) => {
-                  if (date) setTempEndTime(date);
-                }}
-                themeVariant="dark"
-                style={styles.timePicker}
-              />
-              <View style={styles.timePickerButtons}>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.timePickerButton,
-                    pressed && styles.pressed,
-                  ]}
-                  onPress={() => setShowEndPicker(false)}
-                  accessibilityLabel="Cancel"
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.timePickerButtonTextCancel}>Cancel</Text>
-                </Pressable>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.timePickerButton,
-                    styles.timePickerButtonConfirm,
-                    { backgroundColor: selectedColor },
-                    pressed && styles.pressed,
-                  ]}
-                  onPress={() => {
-                    setEndTime(tempEndTime);
-                    setShowEndPicker(false);
+        {/* End Time Picker */}
+        {Platform.OS === "ios" ? (
+          <Modal
+            visible={showEndPicker}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowEndPicker(false)}
+          >
+            <View style={styles.timePickerOverlay}>
+              <View style={styles.timePickerContainer}>
+                <View style={styles.timePickerHeader}>
+                  <Text style={styles.timePickerTitle}>End Time</Text>
+                </View>
+                <DateTimePicker
+                  value={tempEndTime}
+                  mode="time"
+                  is24Hour={true}
+                  display="spinner"
+                  onChange={(event, date) => {
+                    if (date) setTempEndTime(date);
                   }}
-                  accessibilityLabel="Confirm end time"
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.timePickerButtonTextConfirm}>
-                    Confirm
-                  </Text>
-                </Pressable>
+                  themeVariant="dark"
+                  style={styles.timePicker}
+                />
+                <View style={styles.timePickerButtons}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.timePickerButton,
+                      pressed && styles.pressed,
+                    ]}
+                    onPress={() => setShowEndPicker(false)}
+                    accessibilityLabel="Cancel"
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.timePickerButtonTextCancel}>
+                      Cancel
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.timePickerButton,
+                      styles.timePickerButtonConfirm,
+                      { backgroundColor: selectedColor },
+                      pressed && styles.pressed,
+                    ]}
+                    onPress={() => {
+                      setEndTime(tempEndTime);
+                      setShowEndPicker(false);
+                    }}
+                    accessibilityLabel="Confirm end time"
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.timePickerButtonTextConfirm}>
+                      Confirm
+                    </Text>
+                  </Pressable>
+                </View>
               </View>
             </View>
-          </View>
-        </Modal>
+          </Modal>
+        ) : (
+          showEndPicker && (
+            <DateTimePicker
+              value={tempEndTime}
+              mode="time"
+              is24Hour={true}
+              display="default"
+              onChange={(event, date) => {
+                setShowEndPicker(false);
+                if (event.type === "set" && date) {
+                  setEndTime(date);
+                }
+              }}
+            />
+          )
+        )}
 
         {/* History Section (only in edit mode) */}
         {isEditMode && (

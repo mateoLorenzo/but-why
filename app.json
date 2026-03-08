@@ -5,10 +5,10 @@
     "scheme": "butwhy",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon-2.png",
+    "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/images/icon-2.png",
+      "image": "./assets/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#FFFFFF"
     },
