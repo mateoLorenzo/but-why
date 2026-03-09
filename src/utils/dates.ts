@@ -1,6 +1,6 @@
 import { DayStatus } from "@/src/types/habit";
 
-const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]; // Sun, Mon, Tue, Wed, Thu, Fri, Sat
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export const formatDateKey = (date: Date): string => {
   return date.toISOString().split("T")[0]; // YYYY-MM-DD
@@ -34,22 +34,25 @@ export const getLastSevenDays = (): Omit<DayStatus, "completed">[] => {
 export const getLastNMatchingDays = (
   count: number,
   allowedDays: number[],
+  referenceDate?: string
 ): Omit<DayStatus, "completed">[] => {
   const days: Omit<DayStatus, "completed">[] = [];
-  const today = new Date();
-  const todayKey = formatDateKey(today);
+  const refDate = referenceDate
+    ? new Date(referenceDate + "T12:00:00")
+    : new Date();
+  const refDateKey = referenceDate || formatDateKey(new Date());
 
   let daysBack = 0;
   while (days.length < count) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - daysBack);
+    const date = new Date(refDate);
+    date.setDate(refDate.getDate() - daysBack);
 
     if (allowedDays.includes(date.getDay())) {
       days.unshift({
         date: formatDateKey(date),
         dayLabel: DAY_LABELS[date.getDay()],
         dayIndex: date.getDay(),
-        isToday: formatDateKey(date) === todayKey,
+        isToday: formatDateKey(date) === refDateKey,
         isFuture: false,
       });
     }
@@ -69,7 +72,7 @@ export const getLastNMatchingDays = (
  */
 export const getTodayAndNextMatchingDays = (
   count: number,
-  allowedDays: number[],
+  allowedDays: number[]
 ): Omit<DayStatus, "completed">[] => {
   const days: Omit<DayStatus, "completed">[] = [];
   const today = new Date();
@@ -105,7 +108,7 @@ export const getTodayAndNextMatchingDays = (
  * Returns 7 days total with today in the middle (index 3).
  */
 export const getDaysCenteredOnToday = (
-  allowedDays: number[],
+  allowedDays: number[]
 ): Omit<DayStatus, "completed">[] => {
   const today = new Date();
   const todayKey = formatDateKey(today);
@@ -224,7 +227,7 @@ export const getTodayKey = (): string => {
 export const getMatchingDaysForMonth = (
   year: number,
   month: number, // 0-indexed (0 = January)
-  allowedDays: number[],
+  allowedDays: number[]
 ): Omit<DayStatus, "completed">[] => {
   const days: Omit<DayStatus, "completed">[] = [];
   const today = new Date();
@@ -260,4 +263,72 @@ export const getMatchingDaysForMonth = (
 export const formatMonthYear = (year: number, month: number): string => {
   const date = new Date(year, month, 1);
   return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+};
+
+/**
+ * Get days centered on today for horizontal scrolling.
+ * Returns days from the past and future with English labels.
+ */
+export const getScrollableDays = (
+  daysBefore: number = 14,
+  daysAfter: number = 7
+): {
+  date: string;
+  dayLabelShort: string;
+  dayNumber: number;
+  isToday: boolean;
+  isFuture: boolean;
+}[] => {
+  const today = new Date();
+  const todayKey = formatDateKey(today);
+
+  const days = [];
+
+  // Start from daysBefore days ago
+  for (let i = -daysBefore; i <= daysAfter; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    const dateKey = formatDateKey(date);
+
+    days.push({
+      date: dateKey,
+      dayLabelShort: DAY_LABELS[date.getDay()],
+      dayNumber: date.getDate(),
+      isToday: dateKey === todayKey,
+      isFuture: dateKey > todayKey,
+    });
+  }
+
+  return days;
+};
+
+/**
+ * Format date to English short format (e.g., "Jan 28")
+ */
+export const formatDateShort = (dateKey: string): string => {
+  const date = new Date(dateKey + "T12:00:00");
+  const day = date.getDate();
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const month = months[date.getMonth()];
+  return `${month} ${day}`;
+};
+
+/**
+ * Check if a date string is in the future
+ */
+export const isFutureDate = (dateKey: string): boolean => {
+  return dateKey > formatDateKey(new Date());
 };

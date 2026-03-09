@@ -4,7 +4,7 @@ import { AppText as Text } from "@/src/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
 
 interface DayIndicatorProps {
   dayLabel: string;
@@ -24,9 +24,28 @@ export const DayIndicator = ({
   onPress,
 }: DayIndicatorProps) => {
   const handlePress = () => {
-    if (isFuture) return; // Don't allow interaction with future days
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onPress();
+    if (isFuture) return;
+
+    if (completed) {
+      Alert.alert(
+        "Unmark habit?",
+        "Are you sure you want to unmark this day as completed?",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Unmark",
+            style: "destructive",
+            onPress: () => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onPress();
+            },
+          },
+        ]
+      );
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onPress();
+    }
   };
 
   return (
@@ -54,12 +73,15 @@ export const DayIndicator = ({
           isFuture && styles.circleFuture,
           pressed && !isFuture && styles.circlePressed,
         ]}
+        accessibilityLabel={dayLabel}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: completed, disabled: isFuture }}
       >
         {completed && (
           <Ionicons name="checkmark" size={14} color={colors.base.white} />
         )}
         {isFuture && (
-          <Ionicons name="lock-closed" size={12} color={colors.neutral[500]} />
+          <Ionicons name="lock-closed" size={12} color={colors.text.tertiary} />
         )}
       </Pressable>
     </View>
@@ -77,20 +99,20 @@ const styles = StyleSheet.create({
   dayLabel: {
     fontSize: 11,
     fontFamily: fonts.medium,
-    color: colors.neutral[400],
+    color: colors.text.secondary,
   },
   dayLabelToday: {
     fontFamily: fonts.semiBold,
   },
   dayLabelFuture: {
-    color: colors.neutral[500],
+    color: colors.text.tertiary,
   },
   circle: {
     width: 28,
     height: 28,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: colors.neutral[300],
+    borderColor: colors.border.default,
     backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
@@ -99,7 +121,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   circleFuture: {
-    borderColor: colors.neutral[500],
+    borderColor: colors.text.tertiary,
     borderStyle: "dashed",
   },
   circlePressed: {

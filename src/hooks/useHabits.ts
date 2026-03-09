@@ -3,18 +3,23 @@ import {
   CompletionRecord,
   DayStatus,
   Habit,
+  HabitForDay,
   HabitWithWeekStatus,
 } from "@/src/types/habit";
 import {
+  formatDateKey,
   getDaysCenteredOnToday,
   getLastNMatchingDays,
+  isFutureDate,
 } from "@/src/utils/dates";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-export const useHabits = () => {
+export const useHabits = (selectedDate?: string) => {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [completions, setCompletions] = useState<CompletionRecord>({});
   const [isLoading, setIsLoading] = useState(true);
+
+  const currentDate = selectedDate || formatDateKey(new Date());
 
   // Load data on mount
   useEffect(() => {
@@ -31,7 +36,7 @@ export const useHabits = () => {
     loadData();
   }, []);
 
-  // Compute habits with week status
+  // Compute habits with week status (legacy, still used by HabitCard)
   const habitsWithStatus: HabitWithWeekStatus[] = useMemo(() => {
     return habits.map((habit) => {
       const habitCompletions = completions[habit.id] || {};
@@ -78,19 +83,78 @@ export const useHabits = () => {
     });
   }, [habits, completions]);
 
+  // Compute habits for a specific day
+  const habitsForDay: HabitForDay[] = useMemo(() => {
+    const selectedDateObj = new Date(currentDate + "T12:00:00");
+    const dayIndex = selectedDateObj.getDay(); // 0 = Sunday, 6 = Saturday
+    const isFuture = isFutureDate(currentDate);
+
+    return habits
+      .map((habit) => {
+        const habitCompletions = completions[habit.id] || {};
+        const isScheduledForDay = habit.days.includes(dayIndex);
+        const isCompletedForDay = isFuture
+          ? false
+          : habitCompletions[currentDate] || false;
+
+        // Calculate streak as of the selected date
+        const pastDays = isFuture
+          ? []
+          : getLastNMatchingDays(60, habit.days, currentDate);
+        let streak = 0;
+
+        for (let i = pastDays.length - 1; i >= 0; i--) {
+          const day = pastDays[i];
+          const isCompleted = habitCompletions[day.date] || false;
+
+          if (day.isToday) {
+            // Reference date: add if completed, don't break if not
+            if (isCompleted) streak++;
+          } else {
+            if (isCompleted) {
+              streak++;
+            } else {
+              break;
+            }
+          }
+        }
+
+        return {
+          ...habit,
+          isCompletedForDay,
+          isScheduledForDay,
+          currentStreak: streak,
+        };
+      })
+      .filter((habit) => habit.isScheduledForDay)
+      .sort((a, b) => {
+        // Habits with startTime come first, sorted by time
+        // Habits without startTime go to the end
+        if (a.startTime && b.startTime) {
+          return a.startTime.localeCompare(b.startTime);
+        }
+        if (a.startTime && !b.startTime) return -1;
+        if (!a.startTime && b.startTime) return 1;
+        return 0;
+      });
+  }, [habits, completions, currentDate]);
+
   // Add a new habit
-  const addHabit = useCallback(async (habit: Omit<Habit, "id" | "createdAt">) => {
-    const newHabit: Habit = {
-      ...habit,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-    };
-    
-    await habitsStorage.addHabit(newHabit);
-    setHabits((prev) => [...prev, newHabit]);
-    
-    return newHabit;
-  }, []);
+  const addHabit = useCallback(
+    async (habit: Omit<Habit, "id" | "createdAt">) => {
+      const newHabit: Habit = {
+        ...habit,
+        id: Date.now().toString(),
+        createdAt: new Date(),
+      };
+
+      await habitsStorage.addHabit(newHabit);
+      setHabits((prev) => [...prev, newHabit]);
+
+      return newHabit;
+    },
+    []
+  );
 
   // Delete a habit
   const deleteHabit = useCallback(async (habitId: string) => {
@@ -104,10 +168,13 @@ export const useHabits = () => {
   }, []);
 
   // Toggle completion for a day
-  const toggleCompletion = useCallback(async (habitId: string, date: string) => {
-    const updated = await habitsStorage.toggleCompletion(habitId, date);
-    setCompletions(updated);
-  }, []);
+  const toggleCompletion = useCallback(
+    async (habitId: string, date: string) => {
+      const updated = await habitsStorage.toggleCompletion(habitId, date);
+      setCompletions(updated);
+    },
+    []
+  );
 
   // Refresh data from storage
   const refresh = useCallback(async () => {
@@ -119,12 +186,43 @@ export const useHabits = () => {
     setCompletions(loadedCompletions);
   }, []);
 
+  // Calculate progress for a specific date (completed / total scheduled)
+  const getProgressForDate = useCallback(
+    (date: string): number => {
+      const dateObj = new Date(date + "T12:00:00");
+      const dayIndex = dateObj.getDay();
+      const isFuture = isFutureDate(date);
+
+      // Get habits scheduled for this day
+      const scheduledHabits = habits.filter((habit) =>
+        habit.days.includes(dayIndex)
+      );
+
+      if (scheduledHabits.length === 0) return 0;
+
+      // For future days, return 0
+      if (isFuture) return 0;
+
+      // Count completed habits
+      const completedCount = scheduledHabits.filter((habit) => {
+        const habitCompletions = completions[habit.id] || {};
+        return habitCompletions[date] || false;
+      }).length;
+
+      return completedCount / scheduledHabits.length;
+    },
+    [habits, completions]
+  );
+
   return {
     habits: habitsWithStatus,
+    habitsForDay,
     isLoading,
     addHabit,
     deleteHabit,
     toggleCompletion,
     refresh,
+    selectedDate: currentDate,
+    getProgressForDate,
   };
 };

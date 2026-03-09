@@ -1,3 +1,4 @@
+import { AnimatedNumber } from "@/src/components/AnimatedNumber";
 import colors from "@/src/theme/colors";
 import { fonts } from "@/src/theme/fonts";
 import { HabitWithWeekStatus } from "@/src/types/habit";
@@ -14,13 +15,26 @@ interface HabitCardProps {
 }
 
 export const HabitCard = ({ habit, onToggleDay, onPress }: HabitCardProps) => {
+  const scheduleText =
+    habit.startTime && habit.endTime
+      ? `${habit.startTime} - ${habit.endTime}`
+      : habit.startTime
+      ? `From ${habit.startTime}`
+      : habit.endTime
+      ? `Until ${habit.endTime}`
+      : null;
+
   return (
     <Pressable
-      style={({ pressed }) => [styles.container, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.container,
+        { borderColor: `${habit.color}80` },
+        pressed && styles.pressed,
+      ]}
       onPress={onPress}
+      accessibilityLabel={habit.name}
+      accessibilityRole="button"
     >
-      <View style={[styles.accentBar, { backgroundColor: habit.color }]} />
-
       <View style={styles.content}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
@@ -36,12 +50,17 @@ export const HabitCard = ({ habit, onToggleDay, onPress }: HabitCardProps) => {
                 color={habit.color}
               />
             </View>
-            <Text style={styles.habitName}>{habit.name}</Text>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.habitName}>{habit.name}</Text>
+              {scheduleText && (
+                <Text style={styles.scheduleText}>{scheduleText}</Text>
+              )}
+            </View>
           </View>
           <Ionicons
             name="ellipsis-vertical"
             size={20}
-            color={colors.neutral[400]}
+            color={colors.text.secondary}
           />
         </View>
 
@@ -68,10 +87,16 @@ export const HabitCard = ({ habit, onToggleDay, onPress }: HabitCardProps) => {
               ]}
             >
               <Ionicons name="flame" size={14} color={habit.color} />
-              <Text style={[styles.streakText, { color: habit.color }]}>
-                {habit.currentStreak}{" "}
-                {habit.currentStreak === 1 ? "day" : "days"}
-              </Text>
+              <View style={styles.streakTextContainer}>
+                <AnimatedNumber
+                  value={habit.currentStreak}
+                  style={[styles.streakText, { color: habit.color }]}
+                />
+                <Text style={[styles.streakText, { color: habit.color }]}>
+                  {" "}
+                  {habit.currentStreak === 1 ? "day" : "days"}
+                </Text>
+              </View>
             </View>
           </View>
         )}
@@ -82,22 +107,15 @@ export const HabitCard = ({ habit, onToggleDay, onPress }: HabitCardProps) => {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.secondary,
     borderRadius: 16,
     overflow: "hidden",
-    shadowColor: colors.auxiliary[700],
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    marginBottom: 12,
   },
   pressed: {
     opacity: 0.7,
     transform: [{ scale: 0.98 }],
-  },
-  accentBar: {
-    width: 4,
   },
   content: {
     flex: 1,
@@ -113,6 +131,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+    flex: 1,
+  },
+  headerTextContainer: {
+    flex: 1,
+    gap: 2,
   },
   iconContainer: {
     width: 32,
@@ -124,7 +147,12 @@ const styles = StyleSheet.create({
   habitName: {
     fontSize: 17,
     fontFamily: fonts.semiBold,
-    color: colors.auxiliary[700],
+    color: colors.text.primary,
+  },
+  scheduleText: {
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: colors.text.tertiary,
   },
   weekRow: {
     flexDirection: "row",
@@ -141,6 +169,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
+  },
+  streakTextContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   streakText: {
     fontSize: 12,

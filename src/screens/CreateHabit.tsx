@@ -3,16 +3,17 @@ import colors from "@/src/theme/colors";
 import { fonts } from "@/src/theme/fonts";
 import { CompletionRecord, Habit } from "@/src/types/habit";
 import { AppText as Text } from "@/src/ui/Text";
-import {
-  formatMonthYear,
-  getMatchingDaysForMonth,
-} from "@/src/utils/dates";
+import { formatMonthYear, getMatchingDaysForMonth } from "@/src/utils/dates";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  Dimensions,
+  FlatList,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -22,31 +23,151 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+// History grid layout
+const HISTORY_COLUMNS = 6;
+const HISTORY_GAP = 8;
+const HISTORY_PADDING = 12;
+const SCROLL_PADDING = 20;
+const HISTORY_BORDER = 1;
+const HISTORY_CONTAINER_INNER_WIDTH =
+  Dimensions.get("window").width -
+  SCROLL_PADDING * 2 -
+  HISTORY_PADDING * 2 -
+  HISTORY_BORDER * 2;
+const HISTORY_DAY_WIDTH = Math.floor(
+  (HISTORY_CONTAINER_INNER_WIDTH - (HISTORY_COLUMNS - 1) * HISTORY_GAP) /
+    HISTORY_COLUMNS
+);
+
 const HABIT_COLORS = [
-  colors.primary[500],
-  colors.success[600],
-  colors.warning[600],
-  colors.info[600],
-  colors.danger[600],
-  colors.auxiliary[500],
+  "#3B82F6",
+  "#22C55E",
+  "#F59E0B",
+  "#8B5CF6",
+  "#EF4444",
+  "#06B6D4",
 ];
 
-const HABIT_ICONS = [
-  "sunny-outline",
-  "fitness-outline",
+// Main preset icons (2 rows of 6)
+const PRESET_ICONS = [
+  "barbell-outline",
   "book-outline",
   "water-outline",
   "leaf-outline",
-  "heart-outline",
-  "musical-notes-outline",
-  "code-slash-outline",
-  "language-outline",
-  "bed-outline",
   "walk-outline",
-  "bicycle-outline",
+  "bed-outline",
+  "nutrition-outline",
+  "pencil-outline",
+  "medical-outline",
+  "happy-outline",
+  "wallet-outline",
 ] as const;
 
-type HabitIcon = (typeof HABIT_ICONS)[number];
+// Extended icons for the modal
+const EXTENDED_ICONS = [
+  // Fitness & Health
+  "fitness-outline",
+  "bicycle-outline",
+  "football-outline",
+  "basketball-outline",
+  "tennisball-outline",
+  "golf-outline",
+  "body-outline",
+  "heart-outline",
+  "pulse-outline",
+  "bandage-outline",
+  // Mind & Wellness
+  "brain-outline",
+  "eye-outline",
+  "ear-outline",
+  "rose-outline",
+  "sunny-outline",
+  "moon-outline",
+  "cloudy-night-outline",
+  "sparkles-outline",
+  // Productivity & Work
+  "laptop-outline",
+  "desktop-outline",
+  "code-slash-outline",
+  "terminal-outline",
+  "briefcase-outline",
+  "clipboard-outline",
+  "document-text-outline",
+  "mail-outline",
+  "calendar-outline",
+  "time-outline",
+  "alarm-outline",
+  "hourglass-outline",
+  // Learning & Creativity
+  "school-outline",
+  "library-outline",
+  "language-outline",
+  "musical-notes-outline",
+  "musical-note-outline",
+  "mic-outline",
+  "headset-outline",
+  "camera-outline",
+  "color-palette-outline",
+  "brush-outline",
+  // Social & Communication
+  "people-outline",
+  "person-outline",
+  "call-outline",
+  "chatbubble-outline",
+  "hand-left-outline",
+  "thumbs-up-outline",
+  // Home & Life
+  "home-outline",
+  "bed-outline",
+  "cafe-outline",
+  "restaurant-outline",
+  "wine-outline",
+  "beer-outline",
+  "pizza-outline",
+  "fast-food-outline",
+  "ice-cream-outline",
+  "fish-outline",
+  "paw-outline",
+  "car-outline",
+  "airplane-outline",
+  "globe-outline",
+  "map-outline",
+  // Finance & Shopping
+  "cash-outline",
+  "card-outline",
+  "cart-outline",
+  "pricetag-outline",
+  "gift-outline",
+  // Nature & Environment
+  "flower-outline",
+  "earth-outline",
+  "rainy-outline",
+  "snow-outline",
+  "thermometer-outline",
+  "bonfire-outline",
+  // Tech & Tools
+  "settings-outline",
+  "construct-outline",
+  "hammer-outline",
+  "bulb-outline",
+  "flash-outline",
+  "battery-charging-outline",
+  "wifi-outline",
+  "bluetooth-outline",
+  // Misc
+  "star-outline",
+  "trophy-outline",
+  "medal-outline",
+  "ribbon-outline",
+  "flag-outline",
+  "rocket-outline",
+  "planet-outline",
+  "infinite-outline",
+  "shield-checkmark-outline",
+  "checkmark-circle-outline",
+] as const;
+
+const DEFAULT_ICON = "barbell-outline";
 
 const FREQUENCY_OPTIONS = [
   { id: "daily", label: "Every day", days: [0, 1, 2, 3, 4, 5, 6] },
@@ -63,7 +184,8 @@ const CreateHabit = () => {
 
   const [name, setName] = useState("");
   const [selectedColor, setSelectedColor] = useState(HABIT_COLORS[0]);
-  const [selectedIcon, setSelectedIcon] = useState<HabitIcon>(HABIT_ICONS[0]);
+  const [selectedIcon, setSelectedIcon] = useState(DEFAULT_ICON);
+  const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
   const [selectedFrequency, setSelectedFrequency] = useState("daily");
   const [customDays, setCustomDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
   const [existingHabit, setExistingHabit] = useState<Habit | null>(null);
@@ -72,7 +194,31 @@ const CreateHabit = () => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
   });
-  const { top } = useSafeAreaInsets();
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [endTime, setEndTime] = useState<Date | null>(null);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+  const [tempStartTime, setTempStartTime] = useState<Date>(new Date());
+  const [tempEndTime, setTempEndTime] = useState<Date>(new Date());
+  const { top, bottom } = useSafeAreaInsets();
+
+  // Helper to format time as HH:mm
+  const formatTime = (date: Date | null): string => {
+    if (!date) return "";
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+
+  // Helper to parse HH:mm string to Date
+  const parseTimeString = (timeStr: string): Date => {
+    const [hours, minutes] = timeStr.split(":").map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    return date;
+  };
 
   // Load existing habit data when editing
   useEffect(() => {
@@ -89,10 +235,12 @@ const CreateHabit = () => {
           // Find matching color or use first as default
           const matchingColor = HABIT_COLORS.find((c) => c === habit.color);
           if (matchingColor) setSelectedColor(matchingColor);
-          setSelectedIcon(habit.icon as HabitIcon);
+          setSelectedIcon(habit.icon || DEFAULT_ICON);
           setSelectedFrequency(habit.frequency);
           setCustomDays(habit.days);
           setCompletions(allCompletions);
+          if (habit.startTime) setStartTime(parseTimeString(habit.startTime));
+          if (habit.endTime) setEndTime(parseTimeString(habit.endTime));
         }
       };
       loadHabit();
@@ -115,7 +263,7 @@ const CreateHabit = () => {
     return getMatchingDaysForMonth(
       historyMonth.year,
       historyMonth.month,
-      activeDays,
+      activeDays
     );
   }, [isEditMode, activeDays, historyMonth]);
 
@@ -163,7 +311,7 @@ const CreateHabit = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const updatedCompletions = await habitsStorage.toggleCompletion(
       habitId,
-      date,
+      date
     );
     setCompletions(updatedCompletions);
   };
@@ -180,6 +328,15 @@ const CreateHabit = () => {
         ? customDays
         : FREQUENCY_OPTIONS.find((f) => f.id === selectedFrequency)?.days || [];
 
+    if (days.length === 0) {
+      Alert.alert(
+        "No days selected",
+        "Please select at least one day for your habit to appear.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
     if (isEditMode && existingHabit) {
       // Update existing habit
       const habits = await habitsStorage.getHabits();
@@ -192,8 +349,10 @@ const CreateHabit = () => {
               icon: selectedIcon,
               frequency: selectedFrequency,
               days,
+              startTime: startTime ? formatTime(startTime) : undefined,
+              endTime: endTime ? formatTime(endTime) : undefined,
             }
-          : habit,
+          : habit
       );
       await habitsStorage.saveHabits(updatedHabits);
     } else {
@@ -206,6 +365,8 @@ const CreateHabit = () => {
         frequency: selectedFrequency,
         days,
         createdAt: new Date(),
+        startTime: startTime ? formatTime(startTime) : undefined,
+        endTime: endTime ? formatTime(endTime) : undefined,
       });
     }
 
@@ -229,7 +390,7 @@ const CreateHabit = () => {
             }
           },
         },
-      ],
+      ]
     );
   };
 
@@ -237,7 +398,7 @@ const CreateHabit = () => {
     setCustomDays((prev) =>
       prev.includes(dayIndex)
         ? prev.filter((d) => d !== dayIndex)
-        : [...prev, dayIndex].sort(),
+        : [...prev, dayIndex].sort()
     );
   };
 
@@ -258,6 +419,8 @@ const CreateHabit = () => {
             styles.headerButton,
             pressed && styles.pressed,
           ]}
+          accessibilityLabel="Cancel"
+          accessibilityRole="button"
         >
           <Text style={styles.headerButtonText}>Cancel</Text>
         </Pressable>
@@ -272,6 +435,9 @@ const CreateHabit = () => {
             pressed && isFormValid && styles.pressed,
           ]}
           disabled={!isFormValid}
+          accessibilityLabel={isEditMode ? "Save habit" : "Create habit"}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !isFormValid }}
         >
           <Text
             style={[
@@ -287,7 +453,10 @@ const CreateHabit = () => {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: bottom },
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -299,7 +468,11 @@ const CreateHabit = () => {
               { backgroundColor: `${selectedColor}18` },
             ]}
           >
-            <Ionicons name={selectedIcon} size={32} color={selectedColor} />
+            <Ionicons
+              name={selectedIcon as keyof typeof Ionicons.glyphMap}
+              size={36}
+              color={selectedColor}
+            />
           </View>
           <Text style={styles.previewName}>{name || "Habit name"}</Text>
         </View>
@@ -309,11 +482,11 @@ const CreateHabit = () => {
           <Text style={styles.sectionTitle}>Name</Text>
           <TextInput
             style={styles.textInput}
-            placeholder="e.g. Meditate, Exercise, Read..."
-            placeholderTextColor={colors.neutral[400]}
+            placeholder="e.g.: Meditate, Exercise, Read..."
+            placeholderTextColor={colors.text.tertiary}
             value={name}
             onChangeText={setName}
-            // autoFocus
+            accessibilityLabel="Habit name"
           />
         </View>
 
@@ -321,28 +494,66 @@ const CreateHabit = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Icon</Text>
           <View style={styles.iconGrid}>
-            {HABIT_ICONS.map((icon) => (
-              <Pressable
-                key={icon}
-                style={({ pressed }) => [
-                  styles.iconOption,
-                  selectedIcon === icon && {
-                    backgroundColor: `${selectedColor}18`,
-                    borderColor: selectedColor,
-                  },
-                  pressed && styles.pressed,
-                ]}
-                onPress={() => setSelectedIcon(icon)}
-              >
+            {PRESET_ICONS.map((icon) => {
+              const isSelected = selectedIcon === icon;
+              return (
+                <Pressable
+                  key={icon}
+                  style={({ pressed }) => [
+                    styles.iconOption,
+                    isSelected && {
+                      backgroundColor: selectedColor,
+                      borderColor: selectedColor,
+                    },
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => setSelectedIcon(icon)}
+                  accessibilityLabel={`Select ${icon.replace("-outline", "")} icon`}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isSelected }}
+                >
+                  <Ionicons
+                    name={icon as keyof typeof Ionicons.glyphMap}
+                    size={24}
+                    color={
+                      isSelected ? colors.base.white : colors.text.tertiary
+                    }
+                  />
+                </Pressable>
+              );
+            })}
+            {/* More icons button */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.iconOption,
+                !PRESET_ICONS.includes(
+                  selectedIcon as (typeof PRESET_ICONS)[number]
+                ) && {
+                  backgroundColor: selectedColor,
+                  borderColor: selectedColor,
+                },
+                pressed && styles.pressed,
+              ]}
+              onPress={() => setIsIconPickerOpen(true)}
+              accessibilityLabel="Show more icons"
+              accessibilityRole="button"
+            >
+              {PRESET_ICONS.includes(
+                selectedIcon as (typeof PRESET_ICONS)[number]
+              ) ? (
                 <Ionicons
-                  name={icon}
+                  name="ellipsis-horizontal"
                   size={24}
-                  color={
-                    selectedIcon === icon ? selectedColor : colors.neutral[500]
-                  }
+                  color={colors.text.tertiary}
                 />
-              </Pressable>
-            ))}
+              ) : (
+                <Ionicons
+                  name={selectedIcon as keyof typeof Ionicons.glyphMap}
+                  size={24}
+                  color={colors.base.white}
+                />
+              )}
+            </Pressable>
           </View>
         </View>
 
@@ -350,9 +561,9 @@ const CreateHabit = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Color</Text>
           <View style={styles.colorRow}>
-            {HABIT_COLORS.map((color) => (
+            {HABIT_COLORS.map((color, index) => (
               <Pressable
-                key={color}
+                key={`color-${index}`}
                 style={({ pressed }) => [
                   styles.colorOption,
                   { backgroundColor: color },
@@ -360,6 +571,9 @@ const CreateHabit = () => {
                   pressed && styles.pressed,
                 ]}
                 onPress={() => setSelectedColor(color)}
+                accessibilityLabel={`Select color ${index + 1}`}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: selectedColor === color }}
               >
                 {selectedColor === color && (
                   <Ionicons
@@ -390,6 +604,9 @@ const CreateHabit = () => {
                   index !== 1 && { flex: 1 },
                 ]}
                 onPress={() => setSelectedFrequency(option.id)}
+                accessibilityLabel={option.label}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: selectedFrequency === option.id }}
               >
                 <Text
                   style={[
@@ -418,6 +635,9 @@ const CreateHabit = () => {
                     pressed && styles.pressed,
                   ]}
                   onPress={() => toggleCustomDay(index)}
+                  accessibilityLabel={label}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: customDays.includes(index) }}
                 >
                   <Text
                     style={[
@@ -434,6 +654,252 @@ const CreateHabit = () => {
           )}
         </View>
 
+        {/* Time Selection */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Schedule (optional)</Text>
+          <View style={styles.timeRow}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.timeButton,
+                startTime && {
+                  backgroundColor: `${selectedColor}18`,
+                  borderColor: selectedColor,
+                },
+                pressed && styles.pressed,
+              ]}
+              onPress={() => {
+                setTempStartTime(startTime || new Date());
+                setShowStartPicker(true);
+              }}
+              accessibilityLabel="Set start time"
+              accessibilityRole="button"
+            >
+              <Ionicons
+                name="time-outline"
+                size={18}
+                color={startTime ? selectedColor : colors.text.tertiary}
+              />
+              <Text
+                style={[
+                  styles.timeButtonText,
+                  startTime && { color: selectedColor },
+                ]}
+              >
+                {startTime ? formatTime(startTime) : "Start time"}
+              </Text>
+            </Pressable>
+
+            <Text style={styles.timeSeparator}>—</Text>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.timeButton,
+                endTime && {
+                  backgroundColor: `${selectedColor}18`,
+                  borderColor: selectedColor,
+                },
+                pressed && styles.pressed,
+              ]}
+              onPress={() => {
+                setTempEndTime(endTime || new Date());
+                setShowEndPicker(true);
+              }}
+              accessibilityLabel="Set end time"
+              accessibilityRole="button"
+            >
+              <Ionicons
+                name="time-outline"
+                size={18}
+                color={endTime ? selectedColor : colors.text.tertiary}
+              />
+              <Text
+                style={[
+                  styles.timeButtonText,
+                  endTime && { color: selectedColor },
+                ]}
+              >
+                {endTime ? formatTime(endTime) : "End time"}
+              </Text>
+            </Pressable>
+          </View>
+
+          {(startTime || endTime) && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.clearTimeButton,
+                pressed && styles.pressed,
+              ]}
+              onPress={() => {
+                setStartTime(null);
+                setEndTime(null);
+              }}
+              accessibilityLabel="Clear schedule"
+              accessibilityRole="button"
+            >
+              <Ionicons
+                name="close-circle-outline"
+                size={16}
+                color={colors.text.tertiary}
+              />
+              <Text style={styles.clearTimeText}>Clear schedule</Text>
+            </Pressable>
+          )}
+        </View>
+
+        {/* Start Time Picker */}
+        {Platform.OS === "ios" ? (
+          <Modal
+            visible={showStartPicker}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowStartPicker(false)}
+          >
+            <View style={styles.timePickerOverlay}>
+              <View style={styles.timePickerContainer}>
+                <View style={styles.timePickerHeader}>
+                  <Text style={styles.timePickerTitle}>Start Time</Text>
+                </View>
+                <DateTimePicker
+                  value={tempStartTime}
+                  mode="time"
+                  is24Hour={true}
+                  display="spinner"
+                  onChange={(event, date) => {
+                    if (date) setTempStartTime(date);
+                  }}
+                  themeVariant="dark"
+                  style={styles.timePicker}
+                />
+                <View style={styles.timePickerButtons}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.timePickerButton,
+                      pressed && styles.pressed,
+                    ]}
+                    onPress={() => setShowStartPicker(false)}
+                    accessibilityLabel="Cancel"
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.timePickerButtonTextCancel}>
+                      Cancel
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.timePickerButton,
+                      styles.timePickerButtonConfirm,
+                      { backgroundColor: selectedColor },
+                      pressed && styles.pressed,
+                    ]}
+                    onPress={() => {
+                      setStartTime(tempStartTime);
+                      setShowStartPicker(false);
+                    }}
+                    accessibilityLabel="Confirm start time"
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.timePickerButtonTextConfirm}>
+                      Confirm
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          </Modal>
+        ) : (
+          showStartPicker && (
+            <DateTimePicker
+              value={tempStartTime}
+              mode="time"
+              is24Hour={true}
+              display="default"
+              onChange={(event, date) => {
+                setShowStartPicker(false);
+                if (event.type === "set" && date) {
+                  setStartTime(date);
+                }
+              }}
+            />
+          )
+        )}
+
+        {/* End Time Picker */}
+        {Platform.OS === "ios" ? (
+          <Modal
+            visible={showEndPicker}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowEndPicker(false)}
+          >
+            <View style={styles.timePickerOverlay}>
+              <View style={styles.timePickerContainer}>
+                <View style={styles.timePickerHeader}>
+                  <Text style={styles.timePickerTitle}>End Time</Text>
+                </View>
+                <DateTimePicker
+                  value={tempEndTime}
+                  mode="time"
+                  is24Hour={true}
+                  display="spinner"
+                  onChange={(event, date) => {
+                    if (date) setTempEndTime(date);
+                  }}
+                  themeVariant="dark"
+                  style={styles.timePicker}
+                />
+                <View style={styles.timePickerButtons}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.timePickerButton,
+                      pressed && styles.pressed,
+                    ]}
+                    onPress={() => setShowEndPicker(false)}
+                    accessibilityLabel="Cancel"
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.timePickerButtonTextCancel}>
+                      Cancel
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.timePickerButton,
+                      styles.timePickerButtonConfirm,
+                      { backgroundColor: selectedColor },
+                      pressed && styles.pressed,
+                    ]}
+                    onPress={() => {
+                      setEndTime(tempEndTime);
+                      setShowEndPicker(false);
+                    }}
+                    accessibilityLabel="Confirm end time"
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.timePickerButtonTextConfirm}>
+                      Confirm
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          </Modal>
+        ) : (
+          showEndPicker && (
+            <DateTimePicker
+              value={tempEndTime}
+              mode="time"
+              is24Hour={true}
+              display="default"
+              onChange={(event, date) => {
+                setShowEndPicker(false);
+                if (event.type === "set" && date) {
+                  setEndTime(date);
+                }
+              }}
+            />
+          )
+        )}
+
         {/* History Section (only in edit mode) */}
         {isEditMode && (
           <View style={styles.section}>
@@ -447,11 +913,13 @@ const CreateHabit = () => {
                   styles.monthNavButton,
                   pressed && styles.pressed,
                 ]}
+                accessibilityLabel="Previous month"
+                accessibilityRole="button"
               >
                 <Ionicons
                   name="chevron-back"
                   size={22}
-                  color={colors.neutral[600]}
+                  color={colors.text.secondary}
                 />
               </Pressable>
 
@@ -467,14 +935,17 @@ const CreateHabit = () => {
                   pressed && canGoToNextMonth && styles.pressed,
                 ]}
                 disabled={!canGoToNextMonth}
+                accessibilityLabel="Next month"
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !canGoToNextMonth }}
               >
                 <Ionicons
                   name="chevron-forward"
                   size={22}
                   color={
                     canGoToNextMonth
-                      ? colors.neutral[600]
-                      : colors.neutral[300]
+                      ? colors.text.secondary
+                      : colors.text.disabled
                   }
                 />
               </Pressable>
@@ -483,11 +954,11 @@ const CreateHabit = () => {
             {/* Days Grid */}
             <View style={styles.historyContainer}>
               {historyDays.length > 0 ? (
-                historyDays.map((day) => {
+                historyDays.map((day, index) => {
                   const isCompleted = habitCompletions[day.date] || false;
                   return (
                     <Pressable
-                      key={day.date}
+                      key={`${day.date}-${index}`}
                       style={({ pressed }) => [
                         styles.historyDay,
                         isCompleted && {
@@ -497,6 +968,9 @@ const CreateHabit = () => {
                         pressed && styles.pressed,
                       ]}
                       onPress={() => handleToggleHistoryDay(day.date)}
+                      accessibilityLabel={`${day.dayLabel} ${new Date(day.date + "T12:00:00").getDate()}`}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isCompleted }}
                     >
                       <Text
                         style={[
@@ -550,6 +1024,8 @@ const CreateHabit = () => {
               styles.deleteButton,
               pressed && styles.deleteButtonPressed,
             ]}
+            accessibilityLabel="Delete habit"
+            accessibilityRole="button"
           >
             <Ionicons
               name="trash-outline"
@@ -560,6 +1036,70 @@ const CreateHabit = () => {
           </Pressable>
         )}
       </ScrollView>
+
+      {/* Icon Picker Modal */}
+      <Modal
+        visible={isIconPickerOpen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setIsIconPickerOpen(false)}
+      >
+        <View style={[styles.modalContainer, { paddingBottom: bottom }]}>
+          <View style={[styles.modalHeader, { paddingTop: top + 16 }]}>
+            <Text style={styles.modalTitle}>Choose Icon</Text>
+            <Pressable
+              onPress={() => setIsIconPickerOpen(false)}
+              style={({ pressed }) => [
+                styles.modalCloseButton,
+                pressed && styles.pressed,
+              ]}
+              accessibilityLabel="Close"
+              accessibilityRole="button"
+            >
+              <Ionicons name="close" size={24} color={colors.text.primary} />
+            </Pressable>
+          </View>
+          <FlatList
+            data={EXTENDED_ICONS}
+            numColumns={6}
+            keyExtractor={(item) => item}
+            contentContainerStyle={[
+              styles.modalIconGrid,
+              { paddingBottom: 20 },
+            ]}
+            renderItem={({ item: icon }) => {
+              const isSelected = selectedIcon === icon;
+              return (
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.modalIconOption,
+                    isSelected && {
+                      backgroundColor: selectedColor,
+                      borderColor: selectedColor,
+                    },
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => {
+                    setSelectedIcon(icon);
+                    setIsIconPickerOpen(false);
+                  }}
+                  accessibilityLabel={`Select ${icon.replace("-outline", "")} icon`}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isSelected }}
+                >
+                  <Ionicons
+                    name={icon as keyof typeof Ionicons.glyphMap}
+                    size={28}
+                    color={
+                      isSelected ? colors.base.white : colors.text.tertiary
+                    }
+                  />
+                </Pressable>
+              );
+            }}
+          />
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -569,7 +1109,7 @@ export default CreateHabit;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: colors.background.primary,
     paddingBottom: 20,
   },
   pressed: {
@@ -582,9 +1122,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.primary,
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
+    borderBottomColor: colors.border.subtle,
   },
   headerButton: {
     paddingVertical: 8,
@@ -597,20 +1137,20 @@ const styles = StyleSheet.create({
   headerButtonText: {
     fontSize: 16,
     fontFamily: fonts.regular,
-    color: colors.neutral[500],
+    color: colors.text.secondary,
   },
   headerButtonPrimary: {
-    color: colors.primary[500],
+    color: colors.accent.primary,
     fontFamily: fonts.semiBold,
     textAlign: "right",
   },
   headerButtonTextDisabled: {
-    color: colors.neutral[400],
+    color: colors.text.tertiary,
   },
   headerTitle: {
     fontSize: 17,
     fontFamily: fonts.semiBold,
-    color: colors.auxiliary[700],
+    color: colors.text.primary,
   },
   scrollView: {
     flex: 1,
@@ -622,8 +1162,10 @@ const styles = StyleSheet.create({
   previewContainer: {
     alignItems: "center",
     paddingVertical: 24,
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.secondary,
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border.subtle,
     gap: 12,
   },
   previewIcon: {
@@ -636,7 +1178,7 @@ const styles = StyleSheet.create({
   previewName: {
     fontSize: 20,
     fontFamily: fonts.semiBold,
-    color: colors.auxiliary[700],
+    color: colors.text.primary,
   },
   section: {
     gap: 12,
@@ -644,19 +1186,19 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontFamily: fonts.semiBold,
-    color: colors.neutral[500],
+    color: colors.text.tertiary,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   textInput: {
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.secondary,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
     fontFamily: fonts.regular,
-    color: colors.auxiliary[700],
+    color: colors.text.primary,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: colors.border.subtle,
   },
   iconGrid: {
     flexDirection: "row",
@@ -670,9 +1212,46 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.secondary,
     borderWidth: 1.5,
-    borderColor: colors.neutral[200],
+    borderColor: colors.border.subtle,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: colors.background.primary,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.subtle,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: fonts.semiBold,
+    color: colors.text.primary,
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalIconGrid: {
+    padding: 16,
+    gap: 12,
+  },
+  modalIconOption: {
+    flex: 1,
+    aspectRatio: 1,
+    maxWidth: "16.666%",
+    margin: 4,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background.secondary,
+    borderWidth: 1.5,
+    borderColor: colors.border.subtle,
   },
   colorRow: {
     flexDirection: "row",
@@ -707,16 +1286,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.secondary,
     borderWidth: 1.5,
-    borderColor: colors.neutral[200],
+    borderColor: colors.border.subtle,
     // flex: 1,
     alignItems: "center",
   },
   frequencyOptionText: {
     fontSize: 14,
     fontFamily: fonts.medium,
-    color: colors.neutral[600],
+    color: colors.text.secondary,
   },
   customDaysContainer: {
     flexDirection: "row",
@@ -729,28 +1308,65 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.secondary,
     borderWidth: 1.5,
-    borderColor: colors.neutral[200],
+    borderColor: colors.border.subtle,
   },
   dayOptionText: {
     fontSize: 13,
     fontFamily: fonts.semiBold,
-    color: colors.neutral[500],
+    color: colors.text.secondary,
   },
   dayOptionTextSelected: {
     color: colors.base.white,
+  },
+  timeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  timeButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: colors.background.secondary,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1.5,
+    borderColor: colors.border.subtle,
+  },
+  timeButtonText: {
+    fontSize: 15,
+    fontFamily: fonts.medium,
+    color: colors.text.tertiary,
+  },
+  timeSeparator: {
+    fontSize: 16,
+    color: colors.text.tertiary,
+  },
+  clearTimeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 8,
+  },
+  clearTimeText: {
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: colors.text.tertiary,
   },
   monthNavigation: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 12,
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.secondary,
     borderRadius: 12,
     padding: 8,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: colors.border.subtle,
   },
   monthNavButton: {
     width: 36,
@@ -765,47 +1381,47 @@ const styles = StyleSheet.create({
   monthLabel: {
     fontSize: 16,
     fontFamily: fonts.semiBold,
-    color: colors.auxiliary[700],
+    color: colors.text.primary,
   },
   historyContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    backgroundColor: colors.base.white,
+    gap: HISTORY_GAP,
+    backgroundColor: colors.background.secondary,
     borderRadius: 12,
-    padding: 12,
+    padding: HISTORY_PADDING,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: colors.border.subtle,
     minHeight: 80,
   },
   noHistoryText: {
     fontSize: 14,
     fontFamily: fonts.regular,
-    color: colors.neutral[400],
+    color: colors.text.tertiary,
     textAlign: "center",
     width: "100%",
     paddingVertical: 20,
   },
   historyDay: {
-    width: 44,
+    width: HISTORY_DAY_WIDTH,
     alignItems: "center",
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: colors.neutral[200],
-    backgroundColor: colors.neutral[50],
+    borderColor: colors.border.subtle,
+    backgroundColor: colors.background.elevated,
     position: "relative",
   },
   historyDayLabel: {
     fontSize: 11,
     fontFamily: fonts.medium,
-    color: colors.neutral[400],
+    color: colors.text.secondary,
     marginBottom: 2,
   },
   historyDayNumber: {
     fontSize: 15,
     fontFamily: fonts.semiBold,
-    color: colors.neutral[600],
+    color: colors.text.primary,
   },
   historyCheckIcon: {
     position: "absolute",
@@ -838,5 +1454,58 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: fonts.medium,
     color: colors.danger[600],
+  },
+  timePickerOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  timePickerContainer: {
+    backgroundColor: colors.background.secondary,
+    borderRadius: 20,
+    width: "85%",
+    maxWidth: 340,
+    overflow: "hidden",
+  },
+  timePickerHeader: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.subtle,
+  },
+  timePickerTitle: {
+    fontSize: 18,
+    fontFamily: fonts.semiBold,
+    color: colors.text.primary,
+    textAlign: "center",
+  },
+  timePicker: {
+    height: 200,
+  },
+  timePickerButtons: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: colors.border.subtle,
+  },
+  timePickerButton: {
+    flex: 1,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  timePickerButtonConfirm: {
+    borderLeftWidth: 1,
+    borderLeftColor: colors.border.subtle,
+  },
+  timePickerButtonTextCancel: {
+    fontSize: 16,
+    fontFamily: fonts.medium,
+    color: colors.text.secondary,
+  },
+  timePickerButtonTextConfirm: {
+    fontSize: 16,
+    fontFamily: fonts.semiBold,
+    color: colors.base.white,
   },
 });

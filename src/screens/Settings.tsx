@@ -51,6 +51,8 @@ const SettingItem = ({
       styles.settingItem,
       pressed && styles.settingItemPressed,
     ]}
+    accessibilityLabel={label}
+    accessibilityRole="button"
   >
     <View
       style={[
@@ -73,7 +75,11 @@ const SettingItem = ({
       {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
     </View>
     {showChevron && (
-      <Ionicons name="chevron-forward" size={20} color={colors.neutral[400]} />
+      <Ionicons
+        name="chevron-forward"
+        size={20}
+        color={colors.text.secondary}
+      />
     )}
   </Pressable>
 );
@@ -110,8 +116,9 @@ const Settings = () => {
       await Share.share({
         message:
           Platform.OS === "ios"
-            ? "Check out But Why - The best habit tracker app! " + APP_STORE_URL
-            : "Check out But Why - The best habit tracker app! " +
+            ? "Try But Why - The best app to track your habits! " +
+              APP_STORE_URL
+            : "Try But Why - The best app to track your habits! " +
               PLAY_STORE_URL,
       });
     } catch (error) {
@@ -141,17 +148,17 @@ const Settings = () => {
   const handleClearAllData = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert(
-      "Clear All Data",
+      "Delete All Data",
       "This will permanently delete all your habits and progress. This action cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Clear All",
+          text: "Delete All",
           style: "destructive",
           onPress: async () => {
             await habitsStorage.clearAll();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            Alert.alert("Done", "All data has been cleared.", [
+            Alert.alert("Done", "All data has been deleted.", [
               {
                 text: "OK",
                 onPress: () => router.back(),
@@ -159,7 +166,7 @@ const Settings = () => {
             ]);
           },
         },
-      ],
+      ]
     );
   };
 
@@ -178,6 +185,8 @@ const Settings = () => {
             styles.headerButton,
             pressed && styles.pressed,
           ]}
+          accessibilityLabel="Close settings"
+          accessibilityRole="button"
         >
           <Text style={styles.headerButtonText}>Done</Text>
         </Pressable>
@@ -244,8 +253,8 @@ const Settings = () => {
             <SettingItem
               icon="trash-outline"
               iconColor={colors.danger[600]}
-              label="Clear All Data"
-              subtitle="Delete all habits and progress"
+              label="Delete All Data"
+              subtitle="Remove all habits and progress"
               onPress={handleClearAllData}
               showChevron={false}
               danger
@@ -266,16 +275,14 @@ const Settings = () => {
 
         {/* Footer */}
         <View style={styles.footer}>
-          {/* <Text style={styles.footerText}>Made with ❤️</Text> */}
-          {/* <Text style={styles.footerSubtext}>But Why © 2026</Text> */}
           <Text style={styles.footerSubtext}>
             &quot;But one of them caught our eye, the one in the center. He
             would neither go towards the feeding grounds at the edge of the ice,
             nor return to the colony. Shortly afterwards we saw him heading
             straight towards the mountains, some 70 kilometers away. Doctor
             Ainslie explained that even if he caught him and brought him back to
-            the colony, he would inmediately head right back for the mountains.
-            BUT WHY? &quot;
+            the colony, he would inmediately head right back for the
+            mountains... But why?&quot;
           </Text>
         </View>
       </ScrollView>
@@ -288,7 +295,7 @@ export default Settings;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: colors.background.primary,
   },
   pressed: {
     opacity: 0.7,
@@ -300,9 +307,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.primary,
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
+    borderBottomColor: colors.border.subtle,
   },
   headerButton: {
     paddingVertical: 8,
@@ -312,12 +319,12 @@ const styles = StyleSheet.create({
   headerButtonText: {
     fontSize: 16,
     fontFamily: fonts.semiBold,
-    color: colors.primary[500],
+    color: colors.accent.primary,
   },
   headerTitle: {
     fontSize: 17,
     fontFamily: fonts.semiBold,
-    color: colors.auxiliary[700],
+    color: colors.text.primary,
   },
   scrollView: {
     flex: 1,
@@ -332,15 +339,15 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: 12,
     fontFamily: fonts.semiBold,
-    color: colors.neutral[500],
+    color: colors.text.tertiary,
     letterSpacing: 0.5,
     marginLeft: 4,
   },
   sectionContent: {
-    backgroundColor: colors.base.white,
+    backgroundColor: colors.background.secondary,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: colors.border.subtle,
     overflow: "hidden",
   },
   settingItem: {
@@ -349,10 +356,10 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[100],
+    borderBottomColor: colors.border.subtle,
   },
   settingItemPressed: {
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.background.elevated,
   },
   settingIconContainer: {
     width: 36,
@@ -368,12 +375,12 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 16,
     fontFamily: fonts.medium,
-    color: colors.auxiliary[700],
+    color: colors.text.primary,
   },
   settingSubtitle: {
     fontSize: 13,
     fontFamily: fonts.regular,
-    color: colors.neutral[500],
+    color: colors.text.secondary,
   },
   aboutItem: {
     flexDirection: "row",
@@ -384,12 +391,12 @@ const styles = StyleSheet.create({
   aboutLabel: {
     fontSize: 16,
     fontFamily: fonts.medium,
-    color: colors.auxiliary[700],
+    color: colors.text.primary,
   },
   aboutValue: {
     fontSize: 16,
     fontFamily: fonts.regular,
-    color: colors.neutral[500],
+    color: colors.text.secondary,
   },
   footer: {
     alignItems: "center",
@@ -399,11 +406,12 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 14,
     fontFamily: fonts.medium,
-    color: colors.neutral[400],
+    color: colors.text.secondary,
   },
   footerSubtext: {
     fontSize: 12,
     fontFamily: fonts.italic,
-    color: colors.neutral[400],
+    color: colors.text.tertiary,
+    textAlign: "justify",
   },
 });

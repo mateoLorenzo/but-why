@@ -6,6 +6,8 @@ export interface Habit {
   frequency: string; // "daily" | "weekdays" | "custom"
   days: number[]; // [0-6] representing Sun-Sat
   createdAt: Date;
+  startTime?: string; // HH:mm format (e.g., "20:00")
+  endTime?: string; // HH:mm format (e.g., "21:30")
 }
 
 export interface DayStatus {
@@ -22,5 +24,11 @@ export type CompletionRecord = Record<string, Record<string, boolean>>;
 
 export interface HabitWithWeekStatus extends Habit {
   weekStatus: DayStatus[];
+  currentStreak: number;
+}
+
+export interface HabitForDay extends Habit {
+  isCompletedForDay: boolean;
+  isScheduledForDay: boolean;
   currentStreak: number;
 }

@@ -1,17 +1,17 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CompletionRecord, Habit } from "@/src/types/habit";
+import { createMMKV } from "react-native-mmkv";
 
-const HABITS_KEY = "@but_why/habits";
-const COMPLETIONS_KEY = "@but_why/completions";
+const storage = createMMKV({ id: "but-why-storage" });
+
+const HABITS_KEY = "habits";
+const COMPLETIONS_KEY = "completions";
 
 export const habitsStorage = {
-  // Habits
-  async getHabits(): Promise<Habit[]> {
+  getHabits(): Habit[] {
     try {
-      const data = await AsyncStorage.getItem(HABITS_KEY);
+      const data = storage.getString(HABITS_KEY);
       if (!data) return [];
       const habits = JSON.parse(data) as Habit[];
-      // Convert date strings back to Date objects
       return habits.map((h) => ({
         ...h,
         createdAt: new Date(h.createdAt),
@@ -22,35 +22,33 @@ export const habitsStorage = {
     }
   },
 
-  async saveHabits(habits: Habit[]): Promise<void> {
+  saveHabits(habits: Habit[]): void {
     try {
-      await AsyncStorage.setItem(HABITS_KEY, JSON.stringify(habits));
+      storage.set(HABITS_KEY, JSON.stringify(habits));
     } catch (error) {
       console.error("Error saving habits:", error);
     }
   },
 
-  async addHabit(habit: Habit): Promise<void> {
-    const habits = await this.getHabits();
+  addHabit(habit: Habit): void {
+    const habits = this.getHabits();
     habits.push(habit);
-    await this.saveHabits(habits);
+    this.saveHabits(habits);
   },
 
-  async deleteHabit(habitId: string): Promise<void> {
-    const habits = await this.getHabits();
+  deleteHabit(habitId: string): void {
+    const habits = this.getHabits();
     const filtered = habits.filter((h) => h.id !== habitId);
-    await this.saveHabits(filtered);
-    
-    // Also remove completions for this habit
-    const completions = await this.getCompletions();
+    this.saveHabits(filtered);
+
+    const completions = this.getCompletions();
     delete completions[habitId];
-    await this.saveCompletions(completions);
+    this.saveCompletions(completions);
   },
 
-  // Completions
-  async getCompletions(): Promise<CompletionRecord> {
+  getCompletions(): CompletionRecord {
     try {
-      const data = await AsyncStorage.getItem(COMPLETIONS_KEY);
+      const data = storage.getString(COMPLETIONS_KEY);
       if (!data) return {};
       return JSON.parse(data) as CompletionRecord;
     } catch (error) {
@@ -59,34 +57,31 @@ export const habitsStorage = {
     }
   },
 
-  async saveCompletions(completions: CompletionRecord): Promise<void> {
+  saveCompletions(completions: CompletionRecord): void {
     try {
-      await AsyncStorage.setItem(COMPLETIONS_KEY, JSON.stringify(completions));
+      storage.set(COMPLETIONS_KEY, JSON.stringify(completions));
     } catch (error) {
       console.error("Error saving completions:", error);
     }
   },
 
-  async toggleCompletion(
-    habitId: string,
-    date: string,
-  ): Promise<CompletionRecord> {
-    const completions = await this.getCompletions();
-    
+  toggleCompletion(habitId: string, date: string): CompletionRecord {
+    const completions = this.getCompletions();
+
     if (!completions[habitId]) {
       completions[habitId] = {};
     }
-    
+
     completions[habitId][date] = !completions[habitId][date];
-    await this.saveCompletions(completions);
-    
+    this.saveCompletions(completions);
+
     return completions;
   },
 
-  // Clear all data (for testing/reset)
-  async clearAll(): Promise<void> {
+  clearAll(): void {
     try {
-      await AsyncStorage.multiRemove([HABITS_KEY, COMPLETIONS_KEY]);
+      storage.remove(HABITS_KEY);
+      storage.remove(COMPLETIONS_KEY);
     } catch (error) {
       console.error("Error clearing data:", error);
     }
